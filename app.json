@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "MataMind-Website",
-    "slug": "MataMind-Website",
+    "name": "QuickLock-App",
+    "slug": "quicklock-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "matamindwebsite",
+    "scheme": "quicklockapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
