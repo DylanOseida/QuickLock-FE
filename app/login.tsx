@@ -1,3 +1,4 @@
+import Fontisto from '@expo/vector-icons/Fontisto';
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -14,7 +15,13 @@ export default function LoginScreen() {
 
 
       {/* Email & Password */}
+      <View style={styles.inputStyle}>
+
+      <Fontisto name="locked" style={{marginBottom: 20}} size={50} color="#00AEEF" />
       <TextInput style={styles.input} placeholder="Email Address" placeholderTextColor="#A0A0A0" value={email} keyboardType="email-address" onChangeText={setEmail} autoCapitalize="none" />
+
+      </View>
+
       <TextInput style={styles.input} placeholder="Password" placeholderTextColor="#A0A0A0" value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" />
 
     </View>
@@ -37,6 +44,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'white',
     marginBottom: 40,
+  },
+  inputStyle:{
+    flexDirection: 'row',
+
+
   },
   input:{
     backgroundColor: '#1C2632',

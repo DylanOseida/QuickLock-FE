@@ -10,6 +10,7 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
+
       {/* Lock Icon */}
       <Fontisto name="locked" style={{marginBottom: 20}} size={50} color="#00AEEF" />
 
@@ -28,10 +29,8 @@ export default function WelcomeScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#232F3E',
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
