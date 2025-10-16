@@ -1,7 +1,9 @@
 import Fontisto from '@expo/vector-icons/Fontisto';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
 
 
 
@@ -10,7 +12,11 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-
+      <LinearGradient
+        colors={['#1D3047', '#0E1927']} // from top to bottom
+        style={StyleSheet.absoluteFillObject}
+      />
+      
       {/* Lock Icon */}
       <Fontisto name="locked" style={{marginBottom: 20}} size={50} color="#00AEEF" />
 
@@ -37,39 +43,41 @@ const styles = StyleSheet.create({
   },
   title: {
     color: 'white',
-    fontSize: 36,
+    fontSize: 40,
     fontWeight: 'bold',
-    marginBottom: 50,
+    marginBottom: 60,
   },
   loginButton: {
-    width: '75%',
+    width: '70%',
+    height:'auto',
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#FFFFFF',
-    paddingVertical: 15,
+    paddingVertical: 10,
     paddingHorizontal: 80,
-    borderRadius: 25,
+    borderRadius: 15,
     marginBottom: 20,
   },
   loginText: {
     color: 'black',
-    fontWeight: 'bold',
-    fontSize: 16,
+    fontWeight: 'normal',
+    fontSize: 20,
     textAlign: 'center',
   },
   signUpButton: {
-    width: '75%',
+    width: '70%',
+    height: 'auto',
     backgroundColor: 'transparent',
     borderWidth: 2,
     borderColor: '#FFFFFF',
-    paddingVertical: 15,
+    paddingVertical: 10,
     paddingHorizontal: 80,
-    borderRadius: 25,
+    borderRadius: 15,
   },
   signUpText: {
     color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
+    fontWeight: 'normal',
+    fontSize: 20,
     textAlign: 'center',
 
   },
