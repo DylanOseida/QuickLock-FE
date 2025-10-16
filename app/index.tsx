@@ -12,8 +12,10 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
+
+      {/* Background Gradient */}
       <LinearGradient
-        colors={['#1D3047', '#0E1927']} // from top to bottom
+        colors={['#0E1927', '#1D3047']}
         style={StyleSheet.absoluteFillObject}
       />
       
