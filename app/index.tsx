@@ -19,11 +19,15 @@ export default function WelcomeScreen() {
         style={StyleSheet.absoluteFillObject}
       />
       
-      {/* Lock Icon */}
-      <Fontisto name="locked" style={{marginBottom: 20}} size={50} color="#00AEEF" />
-
+    
       {/* App Name */}
-      <Text style={styles.title}>QuickLock</Text>
+      <View style={styles.header}>
+        {/* Lock Icon */}
+        <Fontisto name="locked" style={{marginBottom: 20, marginTop: 20}} size={50} color="#00AEEF" />
+
+        <Text style={styles.title}>Quick Lock</Text>
+        <Text style={styles.subtitle}>Secure Made Simple</Text>
+      </View>
 
       {/* Buttons */}
       <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/login')}>
@@ -43,13 +47,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+  },
+  header:{
+    ...Variables.header,
   },
   title: {
-    color: 'white',
     fontSize: 40,
     fontWeight: 'bold',
-    marginBottom: 60,
+    color: 'white',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 18,
+    color: 'white',
+    textAlign: 'center',
   },
 
   /********* Buttons *********/

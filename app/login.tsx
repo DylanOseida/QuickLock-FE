@@ -56,7 +56,7 @@ export default function LoginScreen() {
         <Text style={styles.loginText}>Login</Text>
       </TouchableOpacity>
 
-      {/* Line Break */}
+      {/* Footer */}
 
       <View style={styles.footer}>
         <View style={styles.lineContainer}>
@@ -95,6 +95,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 18,
     color: 'white',
+    textAlign: 'center',
   },
 
   /********* Form (Input) *********/
