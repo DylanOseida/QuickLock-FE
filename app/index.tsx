@@ -3,8 +3,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-
+import Colors from '../assets/styles/colors';
+import Variables from '../assets/styles/variables';
 
 
 export default function WelcomeScreen() {
@@ -31,13 +31,15 @@ export default function WelcomeScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.signUpButton} onPress={() => router.push('/sign-up')}>
-        <Text style={styles.signUpText}>Sign-Up</Text>
+        <Text style={styles.signUpText}>Sign Up</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+
+  /********* Header *********/
   container: {
     flex: 1,
     alignItems: 'center',
@@ -49,38 +51,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 60,
   },
+
+  /********* Buttons *********/
   loginButton: {
-    width: '70%',
-    height:'auto',
+    ...Variables.buttons,
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    paddingVertical: 10,
-    paddingHorizontal: 80,
-    borderRadius: 15,
-    marginBottom: 20,
   },
   loginText: {
+    ...Variables.buttonsText,
     color: 'black',
-    fontWeight: 'normal',
-    fontSize: 20,
-    textAlign: 'center',
   },
   signUpButton: {
-    width: '70%',
-    height: 'auto',
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    paddingVertical: 10,
-    paddingHorizontal: 80,
-    borderRadius: 15,
+    ...Variables.buttons,
+    backgroundColor: Colors.text_input,
   },
   signUpText: {
+    ...Variables.buttonsText,
     color: 'white',
-    fontWeight: 'normal',
-    fontSize: 20,
-    textAlign: 'center',
-
   },
+
 });
