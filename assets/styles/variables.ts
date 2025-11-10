@@ -5,7 +5,7 @@ const Variables = StyleSheet.create({
     /********* Header *********/
     header:{
         alignItems: 'center',
-        marginTop: '50%',
+        marginTop: '40%',
         marginBottom: '20%',
     },
 

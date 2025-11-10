@@ -23,7 +23,7 @@ export default function WelcomeScreen() {
       {/* App Name */}
       <View style={styles.header}>
         {/* Lock Icon */}
-        <Fontisto name="locked" style={{marginBottom: 20, marginTop: 20}} size={50} color="#00AEEF" />
+        <Fontisto name="locked" style={{marginBottom: 20, marginTop: '20%'}} size={50} color="#00AEEF" />
 
         <Text style={styles.title}>Quick Lock</Text>
         <Text style={styles.subtitle}>Secure Made Simple</Text>
