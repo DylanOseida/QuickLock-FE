@@ -1,4 +1,4 @@
-export const BASE_URL = "https://nonreturnable-incalculably-suzie.ngrok-free.dev"; // your Django backend
+export const BASE_URL = "http://127.0.0.1:8000"; // your Django backend
 
 export async function registerUser(userData) {
   try {
