@@ -6,13 +6,40 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Colors from '../assets/styles/colors';
 import Variables from '../assets/styles/variables';
+import { registerUser } from "../config/api";
 
 export default function LoginScreen() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
+
   
+  const handleSignUp = async () => {
+
+    try {
+
+      const userData = {
+      username: email,
+      email: email,
+      password: password,
+      first_name: "Test",
+      last_name: "User",
+      is_staff: false,
+      is_active: true,
+      is_superuser: false,
+      };
+
+      const response = await registerUser(userData);
+      console.log('User registered successfully:', response);
+      alert("Account created successfully!");
+      router.push("/login");
+    }
+    catch(error){
+      console.error("Sign-up failed:", error);
+      alert("Sign-up failed. Check console for details."); //temp alert
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -51,7 +78,7 @@ export default function LoginScreen() {
 
       {/* Buttons */}
 
-      <TouchableOpacity style={styles.signUpButton} onPress={() => router.push('/sign-up')}>
+      <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
         <Text style={styles.signUpText}>Sign Up</Text>
       </TouchableOpacity>
 

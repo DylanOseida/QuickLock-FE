@@ -6,7 +6,6 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Colors from '../assets/styles/colors';
 import Variables from '../assets/styles/variables';
 
-
 export default function WelcomeScreen() {
   const router = useRouter();
 
