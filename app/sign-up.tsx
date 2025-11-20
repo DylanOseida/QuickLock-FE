@@ -45,7 +45,7 @@ const handleSignUp = async () => {
     try {
       const tokens = await loginUser({ username: email, password });
       await saveTokens(tokens);
-      router.push("/"); 
+      router.push("/home"); 
     } catch (loginErr) {
       console.warn("Auto-login failed:", loginErr);
       alert("Account created. Please log in.");
