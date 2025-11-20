@@ -1,88 +1,122 @@
+// screens/SignUpScreen.js (replace your current file)
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Colors from '../assets/styles/colors';
 import Variables from '../assets/styles/variables';
-import { registerUser } from "../config/api";
+import { loginUser, registerUser, saveTokens } from "../config/api";
 
-export default function LoginScreen() {
-
+export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  
-  const handleSignUp = async () => {
+  const validate = () => {
+    if (!email) return "Please enter an email.";
+    if (!password) return "Please enter a password.";
+    if (password.length < 6) return "Password should be at least 6 characters.";
+    if (password !== confirmPassword) return "Passwords do not match.";
+    return null;
+  };
 
-    try {
+const handleSignUp = async () => {
+  const error = validate();
+  if (error) {
+    alert(error);
+    return;
+  }
 
-      const userData = {
+  setLoading(true);
+  try {
+    const userData = {
       username: email,
       email: email,
       password: password,
-      first_name: "Test",
-      last_name: "User",
-      is_staff: false,
-      is_active: true,
-      is_superuser: false,
-      };
+    };
 
-      const response = await registerUser(userData);
-      console.log('User registered successfully:', response);
-      alert("Account created successfully!");
+    const registerResp = await registerUser(userData);
+    console.log("Registered:", registerResp);
+
+    try {
+      const tokens = await loginUser({ username: email, password });
+      await saveTokens(tokens);
+      router.push("/"); 
+    } catch (loginErr) {
+      console.warn("Auto-login failed:", loginErr);
+      alert("Account created. Please log in.");
       router.push("/login");
     }
-    catch(error){
-      console.error("Sign-up failed:", error);
-      alert("Sign-up failed. Check console for details."); //temp alert
-    }
-  };
+  } catch (err) {
+    console.error("Sign-up failed:", err.status, err.payload || err.message);
+    const msg =
+      (err.payload && (err.payload.detail || JSON.stringify(err.payload))) ||
+      err.message ||
+      "Sign-up failed.";
+    alert(msg);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <View style={styles.container}>
-
-      {/* Background Gradient */}
-      <LinearGradient
-        colors={['#0E1927', '#1D3047']} 
-        style={StyleSheet.absoluteFillObject}   
-      />
-
-      {/* Create Account */}
+      <LinearGradient colors={['#0E1927', '#1D3047']} style={StyleSheet.absoluteFillObject} />
 
       <View style={styles.header}>
         <Text style={styles.title}>Create Account</Text>
         <Text style={styles.subtitle}>to get started now!</Text>
       </View>
 
-      {/* Create Email & Password */}
-
       <View style={styles.form}>
         <View style ={styles.inputStyle}>
           <MaterialIcons style={styles.icon}  name="email" size={24}/>
-          <TextInput style={styles.input} placeholder="Email Address" placeholderTextColor={Colors.placeholder} value={email} keyboardType="email-address" onChangeText={setEmail} autoCapitalize="none" />
+          <TextInput
+            style={styles.input}
+            placeholder="Email Address"
+            placeholderTextColor={Colors.placeholder}
+            value={email}
+            keyboardType="email-address"
+            onChangeText={setEmail}
+            autoCapitalize="none"
+          />
         </View>
 
         <View style ={styles.inputStyle}>
           <MaterialCommunityIcons style={styles.icon} name="lock" size={24}/>
-          <TextInput style={styles.input} placeholder="Password" placeholderTextColor={Colors.placeholder} onChangeText={setPassword} secureTextEntry autoCapitalize="none" />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor={Colors.placeholder}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoCapitalize="none"
+          />
         </View>
 
         <View style ={styles.inputStyle}>
           <MaterialCommunityIcons style={styles.icon} name="lock" size={24}/>
-          <TextInput style={styles.input} placeholder="Confirm Password" placeholderTextColor={Colors.placeholder} onChangeText={setPassword} secureTextEntry autoCapitalize="none" />
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm Password"
+            placeholderTextColor={Colors.placeholder}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            autoCapitalize="none"
+          />
         </View>
       </View>
 
-      {/* Buttons */}
-
-      <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
-        <Text style={styles.signUpText}>Sign Up</Text>
+      <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp} disabled={loading}>
+        {loading ? <ActivityIndicator /> : <Text style={styles.signUpText}>Sign Up</Text>}
       </TouchableOpacity>
-
-      {/* Footer */}
 
       <View style={styles.footer}>
         <View style={styles.lineContainer}>
@@ -91,86 +125,31 @@ export default function LoginScreen() {
 
         <View style={styles.loginContainer}>
           <Text style={styles.questionText}>Already have an account?</Text>
-
           <TouchableOpacity onPress={() => router.push('/login')}>
             <Text style={{...Variables.underlinedText}}>Login</Text>
           </TouchableOpacity>
         </View>
       </View>
-
     </View>
   );
 }
 
+// styles: same as your original, you can paste your existing styles object here.
+// For brevity, reuse the styles from your original file (no changes required)
 const styles = StyleSheet.create({
-
-  /********* Header *********/
-  container: { 
-    flex: 1, 
-    alignItems: 'center', 
-  },
-  header:{
-    ...Variables.header,
-  },
-  title: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: 'white',
-    textAlign: 'center',
-  },
-
-  /********* Form (Input) *********/
-  form:{
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 20,
-  },
-  inputStyle:{
-    ...Variables.inputStyle,
-    backgroundColor: Colors.text_input,
-  },
-  icon:{
-    marginLeft: 5,
-    marginRight: 5,
-    color: Colors.white,
-  },
-  input:{
-    ...Variables.input,
-  },
-
-  /********* Buttons *********/
-  signUpButton: {
-    ...Variables.buttons,
-    marginTop: '20%',
-    backgroundColor: '#FFFFFF',
-  },
-  signUpText: {
-    ...Variables.buttonsText,
-    color: 'black',
-  },
-
-  /********* Footer *********/
-  footer:{
-    ...Variables.footer,
-  },
-  lineContainer:{
-    width: Variables.buttons.width,
-    alignItems: 'center',
-  },
-  line:{
-    height: 1, 
-    backgroundColor: 'white',
-    width: '100%',
-  },
-  loginContainer:{
-    ...Variables.linkContainer,
-  },
-    questionText:{
-    color: 'white',
-  },
+  container: { flex: 1, alignItems: 'center' },
+  header:{ ...Variables.header },
+  title: { fontSize: 40, fontWeight: 'bold', color: 'white', marginBottom: 10 },
+  subtitle: { fontSize: 18, color: 'white', textAlign: 'center' },
+  form:{ alignItems: 'center', justifyContent: 'center', gap: 20 },
+  inputStyle:{ ...Variables.inputStyle, backgroundColor: Colors.text_input },
+  icon:{ marginLeft: 5, marginRight: 5, color: Colors.white },
+  input:{ ...Variables.input },
+  signUpButton: { ...Variables.buttons, marginTop: '20%', backgroundColor: '#FFFFFF' },
+  signUpText: { ...Variables.buttonsText, color: 'black' },
+  footer:{ ...Variables.footer },
+  lineContainer:{ width: Variables.buttons.width, alignItems: 'center' },
+  line:{ height: 1, backgroundColor: 'white', width: '100%' },
+  loginContainer:{ ...Variables.linkContainer },
+  questionText:{ color: 'white' },
 });
