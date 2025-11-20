@@ -44,6 +44,7 @@ const handleSignUp = async () => {
 
     try {
       const tokens = await loginUser({ username: email, password });
+      console.log('login response:', tokens);
       await saveTokens(tokens);
       router.push("/home"); 
     } catch (loginErr) {

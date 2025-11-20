@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
-export const BASE_URL = "http://192.168.X.X:8000"; // your Django backend IP
+export const BASE_URL = "http://192.168.X.X:8000"; 
 
 export async function registerUser(userData) {
   try {
@@ -51,28 +52,19 @@ export async function loginUser({ username, password }) {
 }
 
 export async function saveTokens(tokens) {
-  // adapt to what your server returns
-  // if tokens.access / tokens.refresh:
-  if (!tokens || typeof tokens !== 'object') return;
+  if (!tokens) return;
 
-  if (tokens.access) {
-    await SecureStore.setItemAsync('accessToken', tokens.access);
-  }
-
-  if (tokens.refresh) {
-    await SecureStore.setItemAsync('refreshToken', tokens.refresh);
-  }
-
-  if (tokens.token) {
-    await SecureStore.setItemAsync('accessToken', tokens.token);
+  try {
+    if (Platform.OS === 'web') {
+      if (tokens.access) localStorage.setItem('accessToken', tokens.access);
+      if (tokens.refresh) localStorage.setItem('refreshToken', tokens.refresh);
+    } else {
+      if (tokens.access) await SecureStore.setItemAsync('accessToken', tokens.access);
+      if (tokens.refresh) await SecureStore.setItemAsync('refreshToken', tokens.refresh);
+    }
+  } catch (err) {
+    console.error('Failed to save tokens:', err);
   }
 }
 
-export async function getAccessToken() {
-  return SecureStore.getItemAsync('accessToken');
-}
 
-export async function logout() {
-  await SecureStore.deleteItemAsync('accessToken');
-  await SecureStore.deleteItemAsync('refreshToken');
-}

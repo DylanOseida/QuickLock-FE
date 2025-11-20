@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import Colors from '../assets/styles/colors';
 import Variables from '../assets/styles/variables';
-import { loginUser } from '../config/api';
+import { loginUser, saveTokens } from '../config/api';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -42,6 +42,8 @@ export default function LoginScreen() {
       console.log('login response:', resp);
 
       // Save tokens if present (function handles different shapes)
+      await saveTokens(resp);
+
       // If your backend returns no tokens (session cookie approach), you may need to
       // rely on cookie-based auth (not covered here) or change backend to return JWTs.
       alert('Login successful');
