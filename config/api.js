@@ -1,11 +1,14 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-export const BASE_URL = "http://192.168.X.X:8000"; 
+export const BASE_URL = "http://192.168.0.228:8000"; 
+const REGISTER_ENDPOINT = `${BASE_URL}/auth/register_user/`;
+const LOGIN_ENDPOINT = `${BASE_URL}/auth/login/`;
 
+//Register User
 export async function registerUser(userData) {
   try {
-    const response = await fetch(`${BASE_URL}/auth/register_user/`, {
+    const response = await fetch(REGISTER_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
@@ -28,8 +31,7 @@ export async function registerUser(userData) {
   }
 }
 
-const LOGIN_ENDPOINT = `${BASE_URL}/auth/login/`;
-
+//Login User
 export async function loginUser({ username, password }) {
   const res = await fetch(LOGIN_ENDPOINT, {
     method: "POST",
@@ -51,6 +53,7 @@ export async function loginUser({ username, password }) {
   return data;
 }
 
+//Save Tokens
 export async function saveTokens(tokens) {
   if (!tokens) return;
 

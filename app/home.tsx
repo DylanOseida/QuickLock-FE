@@ -1,15 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useMemo, useRef, useState } from "react";
-import {
-  Animated,
-  Platform,
-  Pressable,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const CARD_WIDTH = 0.86; // percentage of screen width (used in styles)
@@ -28,42 +20,42 @@ export default function App() {
   const statusText = `${locked ? "Locked" : "Unlocked"} by John Doe`;
   const timeText = "Today at 10:28 AM";
 
-const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-const onPressIn = () => {
-  Animated.timing(holdAnim, {
-    toValue: 1,
-    duration: 1000,
-    useNativeDriver: false,
-  }).start();
+  const onPressIn = () => {
+    Animated.timing(holdAnim, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: false,
+    }).start();
 
-  holdTimer.current = setTimeout(() => {
-    setLocked(v => !v);
+    holdTimer.current = setTimeout(() => {
+      setLocked(v => !v);
 
+      if (holdTimer.current) {
+        clearTimeout(holdTimer.current);
+        holdTimer.current = null;
+      }
+
+      Animated.sequence([
+        Animated.timing(holdAnim, { toValue: 0, duration: 0, useNativeDriver: false }),
+        Animated.timing(holdAnim, { toValue: 1, duration: 200, useNativeDriver: false }),
+        Animated.timing(holdAnim, { toValue: 0, duration: 300, useNativeDriver: false }),
+      ]).start();
+    }, 1000);
+  };
+
+  const onPressOut = () => {
     if (holdTimer.current) {
       clearTimeout(holdTimer.current);
       holdTimer.current = null;
     }
-
-    Animated.sequence([
-      Animated.timing(holdAnim, { toValue: 0, duration: 0, useNativeDriver: false }),
-      Animated.timing(holdAnim, { toValue: 1, duration: 200, useNativeDriver: false }),
-      Animated.timing(holdAnim, { toValue: 0, duration: 300, useNativeDriver: false }),
-    ]).start();
-  }, 1000);
-};
-
-const onPressOut = () => {
-  if (holdTimer.current) {
-    clearTimeout(holdTimer.current);
-    holdTimer.current = null;
-  }
-  Animated.timing(holdAnim, {
-    toValue: 0,
-    duration: 180,
-    useNativeDriver: false,
-  }).start();
-};
+    Animated.timing(holdAnim, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: false,
+    }).start();
+  };
 
   const ringBorderWidth = holdAnim.interpolate({
     inputRange: [0, 1],
@@ -77,19 +69,23 @@ const onPressOut = () => {
 
   return (
     <LinearGradient
-      colors={["#1A2430", "#1B4764"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.container}
+      colors={['#0E1927', '#1D3047']}
+      style={StyleSheet.absoluteFillObject}
     >
+
       <StatusBar barStyle="light-content" />
+
       <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Home</Text>
-          <View style={styles.avatar}>
-            <Feather name="user" size={24} color="#cfe7f5" />
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Feather name="user" size={24} color="#cfe7f5" />
+            </View>
           </View>
+
+
+          <Text style={styles.title}>Home</Text>
         </View>
 
         {/* Card */}
@@ -99,42 +95,34 @@ const onPressOut = () => {
             <Text style={styles.muted}>Battery Life: {battery}%</Text>
 
             {/* Lock button */}
-            <View style={{ height: 320, alignItems: "center", justifyContent: "center" }}>
-              <Animated.View
-                style={[
-                  styles.ring,
-                  { borderWidth: ringBorderWidth as any, opacity: ringOpacity as any },
-                ]}
-              />
-              <Pressable
-                onPressIn={onPressIn}
-                onPressOut={onPressOut}
-                android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: true }}
+            <View style={styles.lockButtonContainer}>
+              <Animated.View style={[styles.ring, { borderWidth: ringBorderWidth as any, opacity: ringOpacity as any },]}/>
+
+              <Pressable onPressIn={onPressIn} onPressOut={onPressOut} android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: true }}
                 style={({ pressed }) => [
                   styles.lockButton,
                   pressed && { transform: [{ scale: 0.98 }] },
                 ]}
               >
-                <Feather
-                  name={lockIcon}
-                  size={125}
-                  color={locked ? "#e2e8f0" : "#e2e8f0"}
-                />
+                <Feather name={lockIcon} size={125} color={locked ? "#e2e8f0" : "#e2e8f0"}/>
               </Pressable>
             </View>
 
+            {/* CTA and status */}
             <Text style={styles.cta}>{ctaText}</Text>
 
-            <View style={{ height: 28 }} />
-
-            <Text style={styles.status}>{statusText}</Text>
-            <Text style={styles.time}>{timeText}</Text>
+            <View style={styles.status}>
+              <Text style={styles.history}>{statusText}</Text>
+              <Text style={styles.time}>{timeText}</Text>
+            </View>
 
             {/* Pager dots */}
-            <View style={styles.dotsRow}>
-              <View style={[styles.dot, styles.dotActive]} />
-              <View style={styles.dot} />
-              <View style={styles.dot} />
+            <View style={styles.dotContainer}>
+              <View style={styles.dotsRow}>
+                <View style={[styles.dot, styles.dotActive]} />
+                <View style={styles.dot} />
+                <View style={styles.dot} />
+              </View>
             </View>
           </View>
         </View>
@@ -151,13 +139,7 @@ const onPressOut = () => {
   );
 }
 
-function NavItem({
-  icon,
-  active,
-}: {
-  icon: keyof typeof Feather.glyphMap;
-  active?: boolean;
-}) {
+function NavItem({icon, active,}: {icon: keyof typeof Feather.glyphMap; active?: boolean;}) {
   return (
     <View style={styles.navItem}>
       <Feather
@@ -172,17 +154,15 @@ function NavItem({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    paddingHorizontal: 24,
-    paddingTop: Platform.OS === "android" ? 8 : 0,
-    flexDirection: "row",
+    flexDirection: "column",
+    paddingHorizontal: "6%",
+    marginTop: "3%",
     alignItems: "center",
-    justifyContent: "space-between",
   },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 56,
-    fontWeight: "800",
-    letterSpacing: 0.4,
+
+  avatarContainer: {
+    width:"100%",
+    alignItems: "flex-end",
   },
   avatar: {
     width: 44,
@@ -194,17 +174,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
+  title: {
+    color: "#FFFFFF",
+    fontSize: 55,
+    fontWeight: 800,
+  },
+
   cardWrap: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: "7%",
+    paddingVertical: "3%",
+    marginBottom: "2%",
   },
   card: {
     width: "100%",
-    borderRadius: 26,
-    paddingVertical: 26,
-    paddingHorizontal: 24,
+    height: "100%",
+    borderRadius: 25,
+    paddingVertical: "5%",
     backgroundColor: "rgba(255,255,255,0.08)",
     borderColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
@@ -212,46 +198,58 @@ const styles = StyleSheet.create({
   cardTitle: {
     color: "#E9F4FF",
     fontSize: 38,
-    fontWeight: "800",
-    marginBottom: 8,
+    fontWeight: 700,
+    marginBottom: 5,
     textAlign:"center",
   },
   muted: {
     color: "rgba(233,244,255,0.85)",
     fontSize: 18,
-    marginBottom: 8,
     textAlign:"center",
   },
 
+  lockButtonContainer: { 
+    height: 250, 
+    marginTop: "5%",
+    alignItems: "center", 
+    justifyContent: "center",     
+  },
   lockButton: {
-    width: 240,
-    height: 240,
+    width: 200,
+    height: 200,
     borderRadius: 120,
     backgroundColor: "rgba(255,255,255,0.25)",
     borderColor: "rgba(255,255,255,0.25)",
     borderWidth: 6,
     alignItems: "center",
     justifyContent: "center",
+    
   },
   ring: {
     position: "absolute",
-    width: 280,
-    height: 280,
+    width: 240,
+    height: 240,
     borderRadius: 140,
     borderColor: "rgba(255,255,255,0.5)",
+    
   },
 
   cta: {
     textAlign: "center",
+    marginTop: "5%",
     color: "#E9F4FF",
     fontSize: 26,
-    fontWeight: "700",
+    fontWeight: 700,
   },
   status: {
+    flex: 1,
+    textAlign: "center",
+    justifyContent: "center",
+  },
+  history: {
     textAlign: "center",
     color: "#CFE7F5",
     fontSize: 20,
-    marginTop: 6,
   },
   time: {
     textAlign: "center",
@@ -260,10 +258,13 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
+  dotContainer: {
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
   dotsRow: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 16,
     gap: 8,
   },
   dot: {
@@ -277,10 +278,9 @@ const styles = StyleSheet.create({
   },
 
   navBar: {
-    marginHorizontal: 16,
-    marginBottom: 18,
-    backgroundColor: "rgba(0,0,0,0.25)",
-    borderRadius: 28,
+    marginHorizontal: "3%",
+    backgroundColor: "#0E1927",
+    borderRadius: 50,
     paddingHorizontal: 22,
     height: 72,
     flexDirection: "row",

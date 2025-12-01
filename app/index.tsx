@@ -17,7 +17,6 @@ export default function WelcomeScreen() {
         colors={['#0E1927', '#1D3047']}
         style={StyleSheet.absoluteFillObject}
       />
-      
     
       {/* App Name */}
       <View style={styles.header}>

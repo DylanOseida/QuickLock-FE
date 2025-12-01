@@ -20,7 +20,7 @@ export default function RootLayout() {
       </View>
 
       {/* Screen navigation */}
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{ headerShown: false, animation: 'none' }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="login" />
         <Stack.Screen name="sign-up" />
