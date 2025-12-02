@@ -1,7 +1,8 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-export const BASE_URL = "http://192.168.0.228:8000"; 
+export const BASE_URL = "http://192.168.X.X:8000"; 
+export const ESP32_URL = "http://192.168.X.X"
 const REGISTER_ENDPOINT = `${BASE_URL}/auth/register_user/`;
 const LOGIN_ENDPOINT = `${BASE_URL}/auth/login/`;
 
@@ -30,6 +31,36 @@ export async function registerUser(userData) {
     throw err;
   }
 }
+
+export async function sendLockState(state) {
+  const url = `${ESP32_URL}/${state}`; 
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const data = await res.json();
+    console.log("ESP32 response:", data);
+  } catch (err) {
+    console.error("Failed to call ESP32:", err);
+  }
+}
+
+export async function fetchNFCStatus() {
+  try {
+    const res = await fetch(`${ESP32_URL}/nfc-status`);
+    const text = await res.text();
+    let data;
+    try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+    return data;
+  } catch (err) {
+    console.error("Failed to fetch NFC status:", err);
+    return { authorized: false, uid: "" };
+  }
+}
+
 
 //Login User
 export async function loginUser({ username, password }) {

@@ -1,41 +1,52 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { fetchNFCStatus, sendLockState } from '../config/api';
 
-const CARD_WIDTH = 0.86; // percentage of screen width (used in styles)
+const CARD_WIDTH = 0.86; 
+
 
 export default function App() {
   const [locked, setLocked] = useState(false);
   const [battery] = useState(79);
+  const [nfcUID, setNfcUID] = useState("");
+  const [nfcAuthorized, setNfcAuthorized] = useState(false);
+
   const holdAnim = useRef(new Animated.Value(0)).current;
-
-  const lockIcon = useMemo<keyof typeof Feather.glyphMap>(
-    () => (locked ? "lock" : "unlock"),
-    [locked]
-  );
-
-  const ctaText = locked ? "Hold to Unlock" : "Hold to Lock";
-  const statusText = `${locked ? "Locked" : "Unlocked"} by John Doe`;
-  const timeText = "Today at 10:28 AM";
-
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+useEffect(() => {
+  const interval = setInterval(async () => {
+    const status = await fetchNFCStatus();
+    setNfcUID(status.uid || "");
+    setNfcAuthorized(status.authorized || false);
+
+    setLocked(!status.authorized ? true : false); 
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, []);
+
+  const lockIcon = useMemo(() => (locked ? "lock" : "unlock"), [locked]);
+  const ctaText = locked ? "Hold to Unlock" : "Hold to Lock";
+const statusText = locked ? "Locked by John Doe"
+    : "Unlocked by John Doe";
+  const timeText = "Today at 10:28 AM";
+
+  // Lock button handlers
   const onPressIn = () => {
-    Animated.timing(holdAnim, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: false,
-    }).start();
+    Animated.timing(holdAnim, { toValue: 1, duration: 1000, useNativeDriver: false }).start();
 
     holdTimer.current = setTimeout(() => {
-      setLocked(v => !v);
+      setLocked(v => {
+        const newState = !v;
+        sendLockState(newState ? "lock" : "unlock");
+        return newState;
+      });
 
-      if (holdTimer.current) {
-        clearTimeout(holdTimer.current);
-        holdTimer.current = null;
-      }
+      if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
 
       Animated.sequence([
         Animated.timing(holdAnim, { toValue: 0, duration: 0, useNativeDriver: false }),
@@ -46,45 +57,23 @@ export default function App() {
   };
 
   const onPressOut = () => {
-    if (holdTimer.current) {
-      clearTimeout(holdTimer.current);
-      holdTimer.current = null;
-    }
-    Animated.timing(holdAnim, {
-      toValue: 0,
-      duration: 180,
-      useNativeDriver: false,
-    }).start();
+    if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
+    Animated.timing(holdAnim, { toValue: 0, duration: 180, useNativeDriver: false }).start();
   };
 
-  const ringBorderWidth = holdAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [2, 10],
-  });
-
-  const ringOpacity = holdAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.25, 0.7],
-  });
+  const ringBorderWidth = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [2, 10] });
+  const ringOpacity = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.7] });
 
   return (
-    <LinearGradient
-      colors={['#0E1927', '#1D3047']}
-      style={StyleSheet.absoluteFillObject}
-    >
-
+    <LinearGradient colors={['#0E1927', '#1D3047']} style={StyleSheet.absoluteFillObject}>
       <StatusBar barStyle="light-content" />
-
       <SafeAreaView style={{ flex: 1 }}>
+
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Feather name="user" size={24} color="#cfe7f5" />
-            </View>
+            <View style={styles.avatar}><Feather name="user" size={24} color="#cfe7f5" /></View>
           </View>
-
-
           <Text style={styles.title}>Home</Text>
         </View>
 
@@ -96,21 +85,19 @@ export default function App() {
 
             {/* Lock button */}
             <View style={styles.lockButtonContainer}>
-              <Animated.View style={[styles.ring, { borderWidth: ringBorderWidth as any, opacity: ringOpacity as any },]}/>
-
-              <Pressable onPressIn={onPressIn} onPressOut={onPressOut} android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: true }}
-                style={({ pressed }) => [
-                  styles.lockButton,
-                  pressed && { transform: [{ scale: 0.98 }] },
-                ]}
+              <Animated.View style={[styles.ring, { borderWidth: ringBorderWidth as any, opacity: ringOpacity as any }]} />
+              <Pressable
+                onPressIn={onPressIn}
+                onPressOut={onPressOut}
+                android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: true }}
+                style={({ pressed }) => [styles.lockButton, pressed && { transform: [{ scale: 0.98 }] }]}
               >
-                <Feather name={lockIcon} size={125} color={locked ? "#e2e8f0" : "#e2e8f0"}/>
+                <Feather name={lockIcon} size={125} color="#e2e8f0" />
               </Pressable>
             </View>
 
-            {/* CTA and status */}
+            {/* CTA & status */}
             <Text style={styles.cta}>{ctaText}</Text>
-
             <View style={styles.status}>
               <Text style={styles.history}>{statusText}</Text>
               <Text style={styles.time}>{timeText}</Text>
@@ -139,14 +126,10 @@ export default function App() {
   );
 }
 
-function NavItem({icon, active,}: {icon: keyof typeof Feather.glyphMap; active?: boolean;}) {
+function NavItem({icon, active}: {icon: keyof typeof Feather.glyphMap; active?: boolean;}) {
   return (
     <View style={styles.navItem}>
-      <Feather
-        name={icon}
-        size={28}
-        color={active ? "#E5F3FF" : "rgba(229,243,255,0.65)"}
-      />
+      <Feather name={icon} size={28} color={active ? "#E5F3FF" : "rgba(229,243,255,0.65)"} />
     </View>
   );
 }
