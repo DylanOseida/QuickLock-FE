@@ -3,7 +3,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { fetchNFCStatus, sendLockState } from '../config/api';
+import BottomNav from "../components/quicklock/bottom-nav";
+import { sendLockState } from '../config/api';
 
 const CARD_WIDTH = 0.86; 
 
@@ -18,15 +19,15 @@ export default function App() {
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 useEffect(() => {
-  const interval = setInterval(async () => {
-    const status = await fetchNFCStatus();
-    setNfcUID(status.uid || "");
-    setNfcAuthorized(status.authorized || false);
+  // const interval = setInterval(async () => {
+  //   const status = await fetchNFCStatus();
+  //   setNfcUID(status.uid || "");
+  //   setNfcAuthorized(status.authorized || false);
 
-    setLocked(!status.authorized ? true : false); 
-  }, 1000);
+  //   setLocked(!status.authorized ? true : false); 
+  // }, 1000);
 
-  return () => clearInterval(interval);
+  // return () => clearInterval(interval);
 }, []);
 
   const lockIcon = useMemo(() => (locked ? "lock" : "unlock"), [locked]);
@@ -115,22 +116,11 @@ const statusText = locked ? "Locked by John Doe"
         </View>
 
         {/* Bottom nav */}
-        <View style={styles.navBar}>
-          <NavItem icon="home" active />
-          <NavItem icon="users" />
-          <NavItem icon="file-text" />
-          <NavItem icon="settings" />
-        </View>
+
+        <BottomNav />
+
       </SafeAreaView>
     </LinearGradient>
-  );
-}
-
-function NavItem({icon, active}: {icon: keyof typeof Feather.glyphMap; active?: boolean;}) {
-  return (
-    <View style={styles.navItem}>
-      <Feather name={icon} size={28} color={active ? "#E5F3FF" : "rgba(229,243,255,0.65)"} />
-    </View>
   );
 }
 
@@ -258,23 +248,5 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     backgroundColor: "rgba(255,255,255,0.8)",
-  },
-
-  navBar: {
-    marginHorizontal: "3%",
-    backgroundColor: "#0E1927",
-    borderRadius: 50,
-    paddingHorizontal: 22,
-    height: 72,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  navItem: {
-    width: 64,
-    alignItems: "center",
-    justifyContent: "center",
   },
 });
