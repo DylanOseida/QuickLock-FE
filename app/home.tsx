@@ -1,10 +1,11 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import BottomNav from "../components/quicklock/bottom-nav";
-import { fetchLockStatus, toggleLock } from '../config/api';
+import BottomNav from "./bottom-nav";
+
 
 const CARD_WIDTH = 0.86;
 const LOCK_ID = "1"; 
@@ -12,12 +13,17 @@ const LOCK_ID = "1";
 export default function App() {
   const [locked, setLocked] = useState(false);
   const [battery] = useState(79);
-
   const holdAnim = useRef(new Animated.Value(0)).current;
   const holdTimer = useRef(null);
+  const router = useRouter();
+
+  let isMounted = true;
 
   useEffect(() => {
-    let isMounted = true;
+  // const interval = setInterval(async () => {
+  //   const status = await fetchNFCStatus();
+  //   setNfcUID(status.uid || "");
+  //   setNfcAuthorized(status.authorized || false);
 
     const interval = setInterval(async () => {
       const status = await fetchLockStatus(LOCK_ID); 
@@ -74,6 +80,18 @@ export default function App() {
   const ringBorderWidth = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [2, 10] });
   const ringOpacity = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.7] });
 
+
+  // const handleUserDetails = async () => {
+
+  //   try {
+  //     const userDetails = await fetchUserDetails("");
+  //     router.push("/user-details", { state: { userDetails } });
+  //   } catch (error) {
+  //     console.error("Error fetching user details:", error);
+  //   }
+    
+  // };
+
   return (
     <LinearGradient colors={['#0E1927', '#1D3047']} style={StyleSheet.absoluteFillObject}>
       <StatusBar barStyle="light-content" />
@@ -81,11 +99,9 @@ export default function App() {
 
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Feather name="user" size={24} color="#cfe7f5" />
-            </View>
-          </View>
+          <Pressable style={styles.avatarContainer} onPress ={() => router.push("/settings")}>
+            <View style={styles.avatar}><Feather name="user" size={24} color="#cfe7f5" /></View>
+          </Pressable>
           <Text style={styles.title}>Home</Text>
         </View>
 
@@ -172,9 +188,9 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   cardWrap: {
+    flex: 1,
     paddingHorizontal: "7%",
     paddingVertical: "3%",
-    marginBottom: "20%",
   },
   card: {
     width: "100%",
@@ -259,10 +275,6 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     backgroundColor: "rgba(255,255,255,0.8)",
-  },
-
-  footer:{
-
   },
 
 });
