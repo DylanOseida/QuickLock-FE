@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { fetchLockStatus, getUserInfo, toggleLock } from '../config/api';
 import BottomNav from "./bottom-nav";
 
 
@@ -14,16 +15,11 @@ export default function App() {
   const [locked, setLocked] = useState(false);
   const [battery] = useState(79);
   const holdAnim = useRef(new Animated.Value(0)).current;
-  const holdTimer = useRef(null);
+  const holdTimer = useRef<number | null>(null);
   const router = useRouter();
 
-  let isMounted = true;
-
   useEffect(() => {
-  // const interval = setInterval(async () => {
-  //   const status = await fetchNFCStatus();
-  //   setNfcUID(status.uid || "");
-  //   setNfcAuthorized(status.authorized || false);
+    let isMounted = true;
 
     const interval = setInterval(async () => {
       const status = await fetchLockStatus(LOCK_ID); 
@@ -81,16 +77,18 @@ export default function App() {
   const ringOpacity = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.7] });
 
 
-  // const handleUserDetails = async () => {
+  const handleUserDetails = async () => {
+    try {
+      const userDetails = await getUserInfo();
+      router.push({
+        pathname: "/settings",
+        params: { userDetails: JSON.stringify(userDetails) },
+      });
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+    }
+  };
 
-  //   try {
-  //     const userDetails = await fetchUserDetails("");
-  //     router.push("/user-details", { state: { userDetails } });
-  //   } catch (error) {
-  //     console.error("Error fetching user details:", error);
-  //   }
-    
-  // };
 
   return (
     <LinearGradient colors={['#0E1927', '#1D3047']} style={StyleSheet.absoluteFillObject}>
@@ -99,7 +97,7 @@ export default function App() {
 
         {/* Header */}
         <View style={styles.header}>
-          <Pressable style={styles.avatarContainer} onPress ={() => router.push("/settings")}>
+          <Pressable style={styles.avatarContainer} onPress ={handleUserDetails}>
             <View style={styles.avatar}><Feather name="user" size={24} color="#cfe7f5" /></View>
           </Pressable>
           <Text style={styles.title}>Home</Text>
@@ -167,6 +165,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     paddingHorizontal: "6%",
     marginTop: "3%",
+    marginBottom: "3%",
     alignItems: "center",
   },
   avatarContainer: {
@@ -190,7 +189,7 @@ const styles = StyleSheet.create({
   cardWrap: {
     flex: 1,
     paddingHorizontal: "7%",
-    paddingVertical: "3%",
+    paddingBottom: "5%",
   },
   card: {
     width: "100%",

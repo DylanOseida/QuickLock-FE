@@ -1,3 +1,4 @@
+import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
@@ -36,6 +37,20 @@ export async function getAccessToken() {
     return null;
   }
 }
+
+export async function getUserInfo() {
+  const token = await getAccessToken(); // your existing helper
+  if (!token) throw new Error("No access token available");
+
+  const response = await axios.get(`${BASE_URL}/auth/user_info/`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.data;
+}
+
 
 export async function registerUser(userData) {
   try {

@@ -4,5 +4,6 @@ export default {
   bg_light: '#1D3047',
   white: '#FFFFFF',
   black: '#000000',
+  red: '#B90000',
   placeholder: '#C4C4C4',
 };
