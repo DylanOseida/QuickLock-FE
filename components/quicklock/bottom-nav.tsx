@@ -1,34 +1,39 @@
 import { Feather } from "@expo/vector-icons";
+import { useRouter } from 'expo-router';
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
-function NavItem({icon, active}: {icon: keyof typeof Feather.glyphMap; active?: boolean;}) {
+function NavItem({icon, active, onPress}: {icon: keyof typeof Feather.glyphMap; active?: boolean; onPress?: () => void;}) {
   return (
-    <View style={styles.navItem}>
-      <Feather name={icon} size={28} color={active ? "#E5F3FF" : "rgba(229,243,255,0.65)"} />
-    </View>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.navItem, pressed && { opacity: 0.6 },]}>
+      <Feather name={icon} size={28} style={{padding: 15}} color={active ? "#E5F3FF" : "rgba(229,243,255,0.65)"} />
+    </Pressable>
   );
 }
 
-export default function BottomNav(){
+export default function BottomNav({ active, onChange }: { active: string, onChange?: (tab: string) => void}){
+    const router = useRouter();
 
     return(
         <View style={styles.navBar}>
-            <NavItem icon="home" active />
-            <NavItem icon="users" />
-            <NavItem icon="file-text" />
-            <NavItem icon="settings" />
+            <NavItem icon="home" active={active === "home"} onPress={() => router.push("/home")} />
+            <NavItem icon="users" active={active === "users"} onPress={() => router.push("/home")} />
+            <NavItem icon="file-text" active={active === "file-text"} onPress={() => router.push("/home")} />
+            <NavItem icon="settings" active={active === "settings"} onPress={() => router.push("/settings")} />
         </View>
     )
 }
 
 const styles = StyleSheet.create({
   navBar: {
-    marginHorizontal: "3%",
+    height: 72,
+    width: '96%',
+    bottom: '5%',
+    position: 'absolute',
+    marginHorizontal: "2%",
     backgroundColor: "#0E1927",
     borderRadius: 50,
     paddingHorizontal: 22,
-    height: 72,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",

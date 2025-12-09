@@ -8,7 +8,6 @@ import { sendLockState } from '../config/api';
 
 const CARD_WIDTH = 0.86; 
 
-
 export default function App() {
   const [locked, setLocked] = useState(false);
   const [battery] = useState(79);
@@ -115,9 +114,11 @@ const statusText = locked ? "Locked by John Doe"
           </View>
         </View>
 
-        {/* Bottom nav */}
+        <View style={styles.footer}>
 
-        <BottomNav />
+        </View>
+        {/* Bottom nav */}
+        <BottomNav active="home"/>
 
       </SafeAreaView>
     </LinearGradient>
@@ -154,10 +155,9 @@ const styles = StyleSheet.create({
   },
 
   cardWrap: {
-    flex: 1,
     paddingHorizontal: "7%",
     paddingVertical: "3%",
-    marginBottom: "2%",
+    marginBottom: "20%",
   },
   card: {
     width: "100%",
@@ -249,4 +249,9 @@ const styles = StyleSheet.create({
   dotActive: {
     backgroundColor: "rgba(255,255,255,0.8)",
   },
+
+  footer:{
+
+  },
+
 });
