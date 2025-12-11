@@ -1,8 +1,8 @@
-import Fontisto from '@expo/vector-icons/Fontisto';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Logo from '../assets/images/QuickLock-Logo.png';
 import Colors from '../assets/styles/colors';
 import Variables from '../assets/styles/variables';
 
@@ -21,9 +21,8 @@ export default function WelcomeScreen() {
       {/* App Name */}
       <View style={styles.header}>
         {/* Lock Icon */}
-        <Fontisto name="locked" style={{marginBottom: 20, marginTop: '20%'}} size={50} color="#00AEEF" />
-
-        <Text style={styles.title}>Quick Lock</Text>
+        <Image source={Logo} style={styles.image} />
+        <Text style={styles.title}>QuickLock</Text>
         <Text style={styles.subtitle}>Secure Made Simple</Text>
       </View>
 
@@ -49,6 +48,10 @@ const styles = StyleSheet.create({
   },
   header:{
     ...Variables.header,
+  },
+  image:{
+    width: 150,
+    height: 150,
   },
   title: {
     fontSize: 40,

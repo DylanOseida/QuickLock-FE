@@ -61,7 +61,6 @@ export async function fetchNFCStatus() {
   }
 }
 
-
 //Login User
 export async function loginUser({ username, password }) {
   const res = await fetch(LOGIN_ENDPOINT, {
