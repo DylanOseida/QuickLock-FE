@@ -19,7 +19,7 @@ export default function BottomNav({ active, onChange }: { active: string, onChan
             <NavItem icon="home" active={active === "home"} onPress={() => router.push("/home")} />
             <NavItem icon="users" active={active === "users"} onPress={() => router.push("/home")} />
             <NavItem icon="file-text" active={active === "file-text"} onPress={() => router.push("/home")} />
-            <NavItem icon="settings" active={active === "settings"} onPress={() => router.push("/settings")} />
+            <NavItem icon="settings" active={active === "settings"} onPress={() => router.push("/home")} />
         </View>
     )
 }
@@ -28,8 +28,6 @@ const styles = StyleSheet.create({
   navBar: {
     height: 72,
     width: '96%',
-    bottom: '5%',
-    position: 'absolute',
     marginHorizontal: "2%",
     backgroundColor: "#0E1927",
     borderRadius: 50,

@@ -1,15 +1,33 @@
 import { Feather } from "@expo/vector-icons";
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
 import { LinearGradient } from "expo-linear-gradient";
-import React from "react";
-import { StatusBar, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useState } from "react";
+import { Pressable, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import BottomNav from "../components/quicklock/bottom-nav";
+import Colors from '../assets/styles/colors';
+import Variables from '../assets/styles/variables';
+
 
 const CARD_WIDTH = 0.86; 
 
 
 export default function Settings() {
+  const router = useRouter();
 
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const params = useLocalSearchParams();
+
+  const [userDetails, setUserDetails] = useState(() => {
+    return params.userDetails
+      ? JSON.parse(params.userDetails as string)
+      : {};
+  });
+  
   return (
     <LinearGradient colors={['#0E1927', '#1D3047']} style={StyleSheet.absoluteFillObject}>
       <StatusBar barStyle="light-content" />
@@ -17,22 +35,85 @@ export default function Settings() {
 
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}><Feather name="user" size={24} color="#cfe7f5" /></View>
+          
+          <View style={styles.pressableContainer}>
+            <Pressable style={styles.avatarContainer} onPress ={() => router.push("/home")}>
+              <View style={styles.avatar}><MaterialIcons name="arrow-back-ios-new" size={24} color="white" /></View>
+            </Pressable>
           </View>
-          <Text style={styles.title}>Settings</Text>
+
+          <Text style={styles.title}>Account</Text>
         </View>
 
         {/* Body */}
-        <View style={styles.body}>
+        <View style={styles.form}>
 
+          <View style={styles.userDetail}>
+            <View style={styles.subTitleContainer}>
+              <Text style={styles.subTitle}>User ID</Text>
+            </View>
+            <View style={styles.inputStyle}>
+              <Feather style={styles.icon} name="hash" size={24} />
+              <TextInput
+                style={styles.input}
+                placeholderTextColor={Colors.placeholder}
+                value={userDetails.username}
+                keyboardType="name-phone-pad"
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                editable={false}
+              />
+            </View>
+          </View>
+          
+          <View style={styles.userDetail}>
+            <View style={styles.subTitleContainer}>
+              <Text style={styles.subTitle}>Email</Text>
+            </View>
+            <View style={styles.inputStyle}>
+              <MaterialIcons style={styles.icon} name="email" size={24} />
+              <TextInput
+                style={styles.input}
+                value={userDetails.email}
+                placeholder="Email"
+                editable={false}
+              />
+            </View>
+          </View>
+          
+          <View style={styles.forgotContainer}>
+            <TouchableOpacity onPress={() => router.push('/settings')} disabled={loading}>
+              <Text style={styles.forgotText}>Change Email</Text>
+            </TouchableOpacity>
+          </View>
 
+          <View style={styles.userDetail}>
+            <View style={styles.subTitleContainer}>
+              <Text style={styles.subTitle}>Password</Text>
+            </View>
+            <View style={styles.inputStyle}>
+              <MaterialCommunityIcons style={styles.icon} name="lock" size={24} />
+              <TextInput
+                style={styles.input}
+                value={"***********"}
+                placeholder="Password"
+                editable={false}
+              />
+            </View>
+          </View>
 
+          <View style={styles.forgotContainer}>
+            <TouchableOpacity onPress={() => router.push('/settings')} disabled={loading}>
+              <Text style={styles.forgotText}>Change Password</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        {/* Bottom nav */}
-
-        <BottomNav active="settings"/>
+      {/* Footer */}
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.signUpButton} onPress={() => router.push('/')}>
+          <Text style={styles.signUpText}>Log Out</Text>
+        </TouchableOpacity>
+      </View>
 
       </SafeAreaView>
     </LinearGradient>
@@ -41,45 +122,95 @@ export default function Settings() {
 
 const styles = StyleSheet.create({
   container: { 
-    flex: 1 
+    flex: 1, 
   },
 
   /*HEADER*/
   header: {
     flexDirection: "column",
-    paddingHorizontal: "6%",
     marginTop: "3%",
     alignItems: "center",
   },
-
-  avatarContainer: {
+  pressableContainer: {
     width:"100%",
-    alignItems: "flex-end",
+    paddingLeft: "3%",
+  },
+  avatarContainer: {
+    width:"10%",
+    alignItems: "center",
+    justifyContent: "flex-start",
   },
   avatar: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.35)",
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
   },
   title: {
     color: "#FFFFFF",
     fontSize: 55,
     fontWeight: 800,
+    textAlign: "center",
   },
 
   /*BODY*/
-  body:{
-
-
-
+  form: { 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    marginTop: '5%'
+  },
+  userDetail: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 5,
+  },
+  subTitleContainer: {
+    width: "75%",
+    marginTop: "8%",
 
   },
+  subTitle: {
+    color: "#E9F4FF",
+    fontSize: 25,
+  },
+  inputStyle: { 
+    ...Variables.inputStyle, 
+    backgroundColor: 
+    Colors.text_input 
+  },
+  icon: { 
+    marginLeft: 5, 
+    marginRight: 5, 
+    color: Colors.placeholder 
+  },
+  input: { 
+    ...Variables.input,
+    textAlignVertical: 'center',
+  },
+  forgotContainer: { 
+    width: Variables.buttons.width, 
+    alignItems: 'flex-end', 
+    marginTop: 10,
+    marginBottom: -10,
+  },
+  forgotText: { 
+    ...Variables.underlinedText 
+  },
 
-
+  /*FOOTER*/
+  footer:{
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  signUpButton: {
+    ...Variables.buttons,
+    backgroundColor: Colors.red,
+  },
+  signUpText: {
+    ...Variables.buttonsText,
+    color: 'white',
+  },
 
 
 });

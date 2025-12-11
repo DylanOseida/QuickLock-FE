@@ -1,52 +1,61 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import BottomNav from "../components/quicklock/bottom-nav";
-import { sendLockState } from '../config/api';
+import { fetchLockStatus, getUserInfo, toggleLock } from '../config/api';
+import BottomNav from "./bottom-nav";
 
-const CARD_WIDTH = 0.86; 
+
+const CARD_WIDTH = 0.86;
+const LOCK_ID = "1"; 
 
 export default function App() {
   const [locked, setLocked] = useState(false);
   const [battery] = useState(79);
-  const [nfcUID, setNfcUID] = useState("");
-  const [nfcAuthorized, setNfcAuthorized] = useState(false);
-
   const holdAnim = useRef(new Animated.Value(0)).current;
-  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdTimer = useRef<number | null>(null);
+  const router = useRouter();
 
-useEffect(() => {
-  // const interval = setInterval(async () => {
-  //   const status = await fetchNFCStatus();
-  //   setNfcUID(status.uid || "");
-  //   setNfcAuthorized(status.authorized || false);
+  useEffect(() => {
+    let isMounted = true;
 
-  //   setLocked(!status.authorized ? true : false); 
-  // }, 1000);
+    const interval = setInterval(async () => {
+      const status = await fetchLockStatus(LOCK_ID); 
 
-  // return () => clearInterval(interval);
-}, []);
+      if (!isMounted || status === null || status === undefined) return;
+
+      setLocked(!status); 
+    }, 1000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const lockIcon = useMemo(() => (locked ? "lock" : "unlock"), [locked]);
   const ctaText = locked ? "Hold to Unlock" : "Hold to Lock";
-const statusText = locked ? "Locked by John Doe"
-    : "Unlocked by John Doe";
+  const statusText = locked ? "Locked by John Doe" : "Unlocked by John Doe";
   const timeText = "Today at 10:28 AM";
 
-  // Lock button handlers
   const onPressIn = () => {
     Animated.timing(holdAnim, { toValue: 1, duration: 1000, useNativeDriver: false }).start();
 
     holdTimer.current = setTimeout(() => {
-      setLocked(v => {
-        const newState = !v;
-        sendLockState(newState ? "lock" : "unlock");
-        return newState;
-      });
+      (async () => {
+        const newStatus = await toggleLock(LOCK_ID); 
 
-      if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
+        if (newStatus === true || newStatus === false) {
+          setLocked(!newStatus); 
+        }
+      })();
+
+      if (holdTimer.current) {
+        clearTimeout(holdTimer.current);
+        holdTimer.current = null;
+      }
 
       Animated.sequence([
         Animated.timing(holdAnim, { toValue: 0, duration: 0, useNativeDriver: false }),
@@ -57,12 +66,29 @@ const statusText = locked ? "Locked by John Doe"
   };
 
   const onPressOut = () => {
-    if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
+    if (holdTimer.current) {
+      clearTimeout(holdTimer.current);
+      holdTimer.current = null;
+    }
     Animated.timing(holdAnim, { toValue: 0, duration: 180, useNativeDriver: false }).start();
   };
 
   const ringBorderWidth = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [2, 10] });
   const ringOpacity = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.7] });
+
+
+  const handleUserDetails = async () => {
+    try {
+      const userDetails = await getUserInfo();
+      router.push({
+        pathname: "/settings",
+        params: { userDetails: JSON.stringify(userDetails) },
+      });
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+    }
+  };
+
 
   return (
     <LinearGradient colors={['#0E1927', '#1D3047']} style={StyleSheet.absoluteFillObject}>
@@ -71,9 +97,9 @@ const statusText = locked ? "Locked by John Doe"
 
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.avatarContainer}>
+          <Pressable style={styles.avatarContainer} onPress ={handleUserDetails}>
             <View style={styles.avatar}><Feather name="user" size={24} color="#cfe7f5" /></View>
-          </View>
+          </Pressable>
           <Text style={styles.title}>Home</Text>
         </View>
 
@@ -85,12 +111,23 @@ const statusText = locked ? "Locked by John Doe"
 
             {/* Lock button */}
             <View style={styles.lockButtonContainer}>
-              <Animated.View style={[styles.ring, { borderWidth: ringBorderWidth as any, opacity: ringOpacity as any }]} />
+              <Animated.View
+                style={[
+                  styles.ring,
+                  {
+                    borderWidth: ringBorderWidth,
+                    opacity: ringOpacity,
+                  },
+                ]}
+              />
               <Pressable
                 onPressIn={onPressIn}
                 onPressOut={onPressOut}
                 android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: true }}
-                style={({ pressed }) => [styles.lockButton, pressed && { transform: [{ scale: 0.98 }] }]}
+                style={({ pressed }) => [
+                  styles.lockButton,
+                  pressed && { transform: [{ scale: 0.98 }] },
+                ]}
               >
                 <Feather name={lockIcon} size={125} color="#e2e8f0" />
               </Pressable>
@@ -114,9 +151,6 @@ const statusText = locked ? "Locked by John Doe"
           </View>
         </View>
 
-        <View style={styles.footer}>
-
-        </View>
         {/* Bottom nav */}
         <BottomNav active="home"/>
 
@@ -131,11 +165,11 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     paddingHorizontal: "6%",
     marginTop: "3%",
+    marginBottom: "3%",
     alignItems: "center",
   },
-
   avatarContainer: {
-    width:"100%",
+    width: "100%",
     alignItems: "flex-end",
   },
   avatar: {
@@ -147,17 +181,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   title: {
     color: "#FFFFFF",
     fontSize: 55,
-    fontWeight: 800,
+    fontWeight: "800",
   },
-
   cardWrap: {
+    flex: 1,
     paddingHorizontal: "7%",
-    paddingVertical: "3%",
-    marginBottom: "20%",
+    paddingBottom: "5%",
   },
   card: {
     width: "100%",
@@ -171,21 +203,20 @@ const styles = StyleSheet.create({
   cardTitle: {
     color: "#E9F4FF",
     fontSize: 38,
-    fontWeight: 700,
+    fontWeight: "700",
     marginBottom: 5,
-    textAlign:"center",
+    textAlign: "center",
   },
   muted: {
     color: "rgba(233,244,255,0.85)",
     fontSize: 18,
-    textAlign:"center",
+    textAlign: "center",
   },
-
-  lockButtonContainer: { 
-    height: 250, 
+  lockButtonContainer: {
+    height: 250,
     marginTop: "5%",
-    alignItems: "center", 
-    justifyContent: "center",     
+    alignItems: "center",
+    justifyContent: "center",
   },
   lockButton: {
     width: 200,
@@ -196,7 +227,6 @@ const styles = StyleSheet.create({
     borderWidth: 6,
     alignItems: "center",
     justifyContent: "center",
-    
   },
   ring: {
     position: "absolute",
@@ -204,19 +234,16 @@ const styles = StyleSheet.create({
     height: 240,
     borderRadius: 140,
     borderColor: "rgba(255,255,255,0.5)",
-    
   },
-
   cta: {
     textAlign: "center",
     marginTop: "5%",
     color: "#E9F4FF",
     fontSize: 26,
-    fontWeight: 700,
+    fontWeight: "700",
   },
   status: {
     flex: 1,
-    textAlign: "center",
     justifyContent: "center",
   },
   history: {
@@ -230,7 +257,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
   },
-
   dotContainer: {
     alignItems: "center",
     justifyContent: "flex-end",
@@ -248,10 +274,6 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     backgroundColor: "rgba(255,255,255,0.8)",
-  },
-
-  footer:{
-
   },
 
 });
