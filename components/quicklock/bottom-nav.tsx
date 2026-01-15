@@ -16,17 +16,17 @@ export default function BottomNav({ active, onChange }: { active: string, onChan
 
     return(
         <View style={styles.navBar}>
-            <NavItem icon="home" active={active === "home"} onPress={() => router.push("/home")} />
-            <NavItem icon="users" active={active === "users"} onPress={() => router.push("/home")} />
-            <NavItem icon="file-text" active={active === "file-text"} onPress={() => router.push("/home")} />
-            <NavItem icon="settings" active={active === "settings"} onPress={() => router.push("/home")} />
+            <NavItem icon="home" active={active === "home"} onPress={() => router.replace("/home")} />
+            <NavItem icon="users" active={active === "users"} onPress={() => router.replace("/users")} />
+            <NavItem icon="file-text" active={active === "file-text"} onPress={() => router.replace("/home")} />
+            <NavItem icon="settings" active={active === "settings"} onPress={() => router.replace("/home")} />
         </View>
     )
 }
 
 const styles = StyleSheet.create({
   navBar: {
-    height: 72,
+    height: "9%",
     width: '96%',
     marginHorizontal: "2%",
     backgroundColor: "#0E1927",

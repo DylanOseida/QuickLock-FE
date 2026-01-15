@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-export const BASE_URL = "http://192.168.0.227:8000"; 
+export const BASE_URL = "http://10.40.190.54:8000"; 
 //export const ESP32_URL = "http://192.168.X.X"
 const REGISTER_ENDPOINT = `${BASE_URL}/auth/register_user/`;
 const LOGIN_ENDPOINT = `${BASE_URL}/auth/login/`;
@@ -127,25 +127,6 @@ export async function loginUser({ username, password }) {
   }
 
   return data;
-}
-
-export async function sendLockState(state) {
-  const url = `${ESP32_URL}/${state}`;
-
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    });
-
-    const text = await res.text();
-    let data;
-    try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
-
-    console.log("ESP32 response:", data);
-  } catch (err) {
-    console.error("Failed to call ESP32:", err);
-  }
 }
 
 export async function fetchLockStatus(lockId = "1") {

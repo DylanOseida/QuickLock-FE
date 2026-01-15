@@ -4,14 +4,14 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import BottomNav from "../components/quicklock/bottom-nav";
 import { fetchLockStatus, getUserInfo, toggleLock } from '../config/api';
-import BottomNav from "./bottom-nav";
 
 
 const CARD_WIDTH = 0.86;
 const LOCK_ID = "1"; 
 
-export default function App() {
+export default function Home() {
   const [locked, setLocked] = useState(false);
   const [battery] = useState(79);
   const holdAnim = useRef(new Animated.Value(0)).current;

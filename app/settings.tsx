@@ -10,9 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Colors from '../assets/styles/colors';
 import Variables from '../assets/styles/variables';
 
-
 const CARD_WIDTH = 0.86; 
-
 
 export default function Settings() {
   const router = useRouter();
