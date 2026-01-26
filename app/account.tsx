@@ -80,7 +80,7 @@ export default function Settings() {
           </View>
           
           <View style={styles.forgotContainer}>
-            <TouchableOpacity onPress={() => router.push('/settings')} disabled={loading}>
+            <TouchableOpacity onPress={() => router.push('/account')} disabled={loading}>
               <Text style={styles.forgotText}>Change Email</Text>
             </TouchableOpacity>
           </View>
@@ -101,7 +101,7 @@ export default function Settings() {
           </View>
 
           <View style={styles.forgotContainer}>
-            <TouchableOpacity onPress={() => router.push('/settings')} disabled={loading}>
+            <TouchableOpacity onPress={() => router.push('/account')} disabled={loading}>
               <Text style={styles.forgotText}>Change Password</Text>
             </TouchableOpacity>
           </View>

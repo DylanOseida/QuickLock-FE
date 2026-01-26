@@ -26,6 +26,9 @@ export default function RootLayout() {
         <Stack.Screen name="sign-up" />
         <Stack.Screen name="forgot-pass" />
         <Stack.Screen name="home" />
+        <Stack.Screen name="account" />
+        <Stack.Screen name="activity-log" />
+
       </Stack>
 
       <StatusBar style="light" />

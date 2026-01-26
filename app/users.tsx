@@ -15,7 +15,6 @@ const LOCK_ID = "1";
 export default function Users() {
   const router = useRouter();
 
-  
   const permanentUsers = [
     { id: "1", name: "John Doe", lockLabel: "All Locks" },
     { id: "2", name: "Jane Doe", lockLabel: "All Locks" },
@@ -46,7 +45,7 @@ export default function Users() {
     try {
       const userDetails = await getUserInfo();
       router.push({
-        pathname: "/settings",
+        pathname: "/account",
         params: { userDetails: JSON.stringify(userDetails) },
       });
     } catch (error) {
@@ -138,7 +137,7 @@ const styles = StyleSheet.create({
     paddingBottom: "5%",
    },
    scrollStyle: {
-    flex: 1,
+    paddingBottom: "20%",
     gap: "5%", 
    },
 
