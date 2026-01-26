@@ -43,7 +43,6 @@ const Variables = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 2,
         borderRadius: 15,
-        paddingVertical: 0,
         paddingHorizontal: 5,
         borderColor: 'white',
     },

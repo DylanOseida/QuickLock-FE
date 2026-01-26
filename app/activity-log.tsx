@@ -11,7 +11,7 @@ import { fetchLockStatus, getUserInfo, toggleLock } from '../config/api';
 const CARD_WIDTH = 0.86;
 const LOCK_ID = "1"; 
 
-export default function Home() {
+export default function ActivityLog() {
   const [locked, setLocked] = useState(false);
   const [battery] = useState(79);
   const holdAnim = useRef(new Animated.Value(0)).current;

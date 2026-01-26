@@ -49,7 +49,7 @@ export default function LoginScreen() {
       alert('Login successful');
 
       // Navigate to protected/home screen
-      router.push('/home'); // change route as needed
+      router.replace('/home'); // change route as needed
     } catch (err) {
       console.error('Login failed:', err.status, err.payload || err.message);
       // show the most useful message available

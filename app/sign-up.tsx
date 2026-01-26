@@ -1,4 +1,5 @@
 // screens/SignUpScreen.js (replace your current file)
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +11,7 @@ import Variables from '../assets/styles/variables';
 import { loginUser, registerUser, saveTokens } from "../config/api";
 
 export default function SignUpScreen() {
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -17,6 +19,7 @@ export default function SignUpScreen() {
   const router = useRouter();
 
   const validate = () => {
+    if(!username) return "Please enter a username.";
     if (!email) return "Please enter an email.";
     if (!password) return "Please enter a password.";
     if (password.length < 6) return "Password should be at least 6 characters.";
@@ -34,16 +37,20 @@ const handleSignUp = async () => {
   setLoading(true);
   try {
     const userData = {
-      username: email,
+      username: username,
       email: email,
       password: password,
     };
 
+    console.log("attempting registration.");
     const registerResp = await registerUser(userData);
     console.log("Registered:", registerResp);
 
     try {
-      const tokens = await loginUser({ username: email, password });
+      
+      console.log("attempting login.");
+
+      const tokens = await loginUser({ username, password });
       console.log('login response:', tokens);
       await saveTokens(tokens);
       router.push("/home"); 
@@ -75,6 +82,19 @@ const handleSignUp = async () => {
       </View>
 
       <View style={styles.form}>
+        <View style ={styles.inputStyle}>
+          <FontAwesome  style={[styles.icon, {padding: 2}]} name="user" size={24}/>          
+          <TextInput
+            style={styles.input}
+            placeholder="Username"
+            placeholderTextColor={Colors.placeholder}
+            value={username}
+            keyboardType="default"
+            onChangeText={setUsername}
+            autoCapitalize="none"
+          />
+        </View>
+
         <View style ={styles.inputStyle}>
           <MaterialIcons style={styles.icon}  name="email" size={24}/>
           <TextInput
@@ -144,7 +164,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 18, color: 'white', textAlign: 'center' },
   form:{ alignItems: 'center', justifyContent: 'center', gap: 20 },
   inputStyle:{ ...Variables.inputStyle, backgroundColor: Colors.text_input },
-  icon:{ marginLeft: 5, marginRight: 5, color: Colors.white },
+  icon:{ marginLeft: 5, marginRight: 5, color: Colors.white, },
   input:{ ...Variables.input },
   signUpButton: { ...Variables.buttons, marginTop: '20%', backgroundColor: '#FFFFFF' },
   signUpText: { ...Variables.buttonsText, color: 'black' },

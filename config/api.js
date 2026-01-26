@@ -1,9 +1,9 @@
+import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-export const BASE_URL = "http://192.168.X.X:8000";
-export const ESP32_URL = "http://192.168.X.X";
-
+export const BASE_URL = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:8000`; 
+//export const ESP32_URL = "http://192.168.X.X"
 const REGISTER_ENDPOINT = `${BASE_URL}/auth/register_user/`;
 const LOGIN_ENDPOINT = `${BASE_URL}/auth/login/`;
 const LOCK_STATUS_ENDPOINT = `${BASE_URL}/embedded/request_status/`;
@@ -38,6 +38,20 @@ export async function getAccessToken() {
   }
 }
 
+export async function getUserInfo() {
+  const token = await getAccessToken(); // your existing helper
+  if (!token) throw new Error("No access token available");
+
+  const response = await axios.get(`${BASE_URL}/auth/user_info/`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.data;
+}
+
+
 export async function registerUser(userData) {
   try {
     const response = await fetch(REGISTER_ENDPOINT, {
@@ -63,6 +77,37 @@ export async function registerUser(userData) {
   }
 }
 
+export async function sendLockState(state) {
+  const url = `${ESP32_URL}/${state}`; 
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const data = await res.json();
+    console.log("ESP32 response:", data);
+  } catch (err) {
+    console.error("Failed to call ESP32:", err);
+  }
+}
+
+export async function fetchNFCStatus() {
+  try {
+    const res = await fetch(`${ESP32_URL}/nfc-status`);
+    const text = await res.text();
+    let data;
+    try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+    return data;
+  } catch (err) {
+    console.error("Failed to fetch NFC status:", err);
+    return { authorized: false, uid: "" };
+  }
+}
+
+
+//Login User
 export async function loginUser({ username, password }) {
   const res = await fetch(LOGIN_ENDPOINT, {
     method: "POST",
@@ -82,25 +127,6 @@ export async function loginUser({ username, password }) {
   }
 
   return data;
-}
-
-export async function sendLockState(state) {
-  const url = `${ESP32_URL}/${state}`;
-
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    });
-
-    const text = await res.text();
-    let data;
-    try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
-
-    console.log("ESP32 response:", data);
-  } catch (err) {
-    console.error("Failed to call ESP32:", err);
-  }
 }
 
 export async function fetchLockStatus(lockId = "1") {
