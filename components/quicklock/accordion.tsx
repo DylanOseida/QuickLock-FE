@@ -92,8 +92,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   content: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: "5%",
+    paddingVertical: "3%",
     gap: 10,
   },
 });
