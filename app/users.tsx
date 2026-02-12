@@ -18,10 +18,8 @@ export default function Users() {
   const permanentUsers = [
     { id: "1", name: "John Doe", lockLabel: "All Locks" },
     { id: "2", name: "Jane Doe", lockLabel: "All Locks" },
-    { id: "3", name: "Jane Doe", lockLabel: "All Locks" },
-    { id: "4", name: "Jane Doe", lockLabel: "All Locks" },
-    { id: "5", name: "Jane Doe", lockLabel: "All Locks" },
-
+    { id: "3", name: "Mary Miller", lockLabel: "Front Door" },
+    { id: "4", name: "Jake Waters", lockLabel: "Garage Door" },
   ];
 
   const temporaryUsers = [

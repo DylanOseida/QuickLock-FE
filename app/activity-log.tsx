@@ -1,81 +1,19 @@
 import { Feather } from "@expo/vector-icons";
+import AntDesign from '@expo/vector-icons/AntDesign';
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
+import React from "react";
+import { Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../components/quicklock/bottom-nav";
-import { fetchLockStatus, getUserInfo, toggleLock } from '../config/api';
-
+import { getUserInfo } from '../config/api';
 
 const CARD_WIDTH = 0.86;
 const LOCK_ID = "1"; 
 
 export default function ActivityLog() {
-  const [locked, setLocked] = useState(false);
-  const [battery] = useState(79);
-  const holdAnim = useRef(new Animated.Value(0)).current;
-  const holdTimer = useRef<number | null>(null);
+
   const router = useRouter();
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const interval = setInterval(async () => {
-      const status = await fetchLockStatus(LOCK_ID); 
-
-      if (!isMounted || status === null || status === undefined) return;
-
-      setLocked(!status); 
-    }, 1000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, []);
-
-  const lockIcon = useMemo(() => (locked ? "lock" : "unlock"), [locked]);
-  const ctaText = locked ? "Hold to Unlock" : "Hold to Lock";
-  const statusText = locked ? "Locked by John Doe" : "Unlocked by John Doe";
-  const timeText = "Today at 10:28 AM";
-
-  const onPressIn = () => {
-    Animated.timing(holdAnim, { toValue: 1, duration: 1000, useNativeDriver: false }).start();
-
-    holdTimer.current = setTimeout(() => {
-      (async () => {
-        const newStatus = await toggleLock(LOCK_ID); 
-
-        if (newStatus === true || newStatus === false) {
-          setLocked(!newStatus); 
-        }
-      })();
-
-      if (holdTimer.current) {
-        clearTimeout(holdTimer.current);
-        holdTimer.current = null;
-      }
-
-      Animated.sequence([
-        Animated.timing(holdAnim, { toValue: 0, duration: 0, useNativeDriver: false }),
-        Animated.timing(holdAnim, { toValue: 1, duration: 200, useNativeDriver: false }),
-        Animated.timing(holdAnim, { toValue: 0, duration: 300, useNativeDriver: false }),
-      ]).start();
-    }, 1000);
-  };
-
-  const onPressOut = () => {
-    if (holdTimer.current) {
-      clearTimeout(holdTimer.current);
-      holdTimer.current = null;
-    }
-    Animated.timing(holdAnim, { toValue: 0, duration: 180, useNativeDriver: false }).start();
-  };
-
-  const ringBorderWidth = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [2, 10] });
-  const ringOpacity = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.7] });
-
 
   const handleUserDetails = async () => {
     try {
@@ -100,59 +38,67 @@ export default function ActivityLog() {
           <Pressable style={styles.avatarContainer} onPress ={handleUserDetails}>
             <View style={styles.avatar}><Feather name="user" size={24} color="#cfe7f5" /></View>
           </Pressable>
-          <Text style={styles.title}>Home</Text>
+          <Text style={styles.title}>Activity Log</Text>
         </View>
 
         {/* Card */}
         <View style={styles.cardWrap}>
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Front Door</Text>
-            <Text style={styles.muted}>Battery Life: {battery}%</Text>
+            <Text style={styles.cardTitle}>History</Text>
 
-            {/* Lock button */}
-            <View style={styles.lockButtonContainer}>
-              <Animated.View
-                style={[
-                  styles.ring,
-                  {
-                    borderWidth: ringBorderWidth,
-                    opacity: ringOpacity,
-                  },
-                ]}
-              />
-              <Pressable
-                onPressIn={onPressIn}
-                onPressOut={onPressOut}
-                android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: true }}
-                style={({ pressed }) => [
-                  styles.lockButton,
-                  pressed && { transform: [{ scale: 0.98 }] },
-                ]}
-              >
-                <Feather name={lockIcon} size={125} color="#e2e8f0" />
-              </Pressable>
-            </View>
+            <View style={styles.log}>
+              <View style={styles.doorAccessedIcon}>
+                <AntDesign name="home" size={35}  color="white" />              
+              </View>
 
-            {/* CTA & status */}
-            <Text style={styles.cta}>{ctaText}</Text>
-            <View style={styles.status}>
-              <Text style={styles.history}>{statusText}</Text>
-              <Text style={styles.time}>{timeText}</Text>
-            </View>
+              <View style={styles.doorDetails}>
+                <Text style={styles.doorAccessed}>Front Door</Text>
+                <Text style={styles.user}>Locked by John Doe</Text>
+              </View>
 
-            {/* Pager dots */}
-            <View style={styles.dotContainer}>
-              <View style={styles.dotsRow}>
-                <View style={[styles.dot, styles.dotActive]} />
-                <View style={styles.dot} />
-                <View style={styles.dot} />
+              <View style={styles.timeStamp}>
+                <Text style={styles.date}>10/27/25</Text>
+                <Text style={styles.time}>10:28 AM</Text>
               </View>
             </View>
+
+            <View style={styles.log}>
+              <View style={styles.doorAccessedIcon}>
+                <AntDesign name="home" size={35}  color="white" />              
+              </View>
+
+              <View style={styles.doorDetails}>
+                <Text style={styles.doorAccessed}>Front Door</Text>
+                <Text style={styles.user}>Unlocked by John Doe</Text>
+              </View>
+
+              <View style={styles.timeStamp}>
+                <Text style={styles.date}>10/27/25</Text>
+                <Text style={styles.time}>10:27 AM</Text>
+              </View>
+            </View>
+
+            <View style={styles.log}>
+              <View style={styles.doorAccessedIcon}>
+                <AntDesign name="home" size={35}  color="white" />              
+              </View>
+
+              <View style={styles.doorDetails}>
+                <Text style={styles.doorAccessed}>Garage Door</Text>
+                <Text style={styles.user}>Unlocked by Jake Waters</Text>
+              </View>
+
+              <View style={styles.timeStamp}>
+                <Text style={styles.date}>10/27/25</Text>
+                <Text style={styles.time}>08:54 AM</Text>
+              </View>
+            </View>
+
           </View>
         </View>
 
         {/* Bottom nav */}
-        <BottomNav active="home"/>
+        <BottomNav active="file-text"/>
 
       </SafeAreaView>
     </LinearGradient>
@@ -184,7 +130,7 @@ const styles = StyleSheet.create({
   title: {
     color: "#FFFFFF",
     fontSize: 55,
-    fontWeight: "800",
+    fontWeight: 800,
   },
   cardWrap: {
     flex: 1,
@@ -194,6 +140,7 @@ const styles = StyleSheet.create({
   card: {
     width: "100%",
     height: "100%",
+    alignItems: "center",
     borderRadius: 25,
     paddingVertical: "5%",
     backgroundColor: "rgba(255,255,255,0.08)",
@@ -203,77 +150,67 @@ const styles = StyleSheet.create({
   cardTitle: {
     color: "#E9F4FF",
     fontSize: 38,
-    fontWeight: "700",
+    fontWeight: 700,
     marginBottom: 5,
     textAlign: "center",
   },
-  muted: {
-    color: "rgba(233,244,255,0.85)",
+
+  log: {
+    width: "85%",
+    height: "15%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.10)",
+  },
+
+  doorAccessedIcon: {
+    width: "auto",
+  },
+
+  doorDetails: {
+    width: "65%",
+    height: "100%",
+    paddingLeft: "5%",
+    flexDirection: "column",
+    gap: 1,
+    alignItems: "flex-start",
+    justifyContent: "center",    
+  },
+  doorAccessed: {
+    color: "white",
     fontSize: 18,
-    textAlign: "center",
+    fontWeight: 400,
   },
-  lockButtonContainer: {
-    height: 250,
-    marginTop: "5%",
-    alignItems: "center",
-    justifyContent: "center",
+  user: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: 400,
   },
-  lockButton: {
-    width: 200,
-    height: 200,
-    borderRadius: 120,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    borderColor: "rgba(255,255,255,0.25)",
-    borderWidth: 6,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ring: {
-    position: "absolute",
-    width: 240,
-    height: 240,
-    borderRadius: 140,
-    borderColor: "rgba(255,255,255,0.5)",
-  },
-  cta: {
-    textAlign: "center",
-    marginTop: "5%",
-    color: "#E9F4FF",
-    fontSize: 26,
-    fontWeight: "700",
-  },
-  status: {
+
+  timeStamp: {
     flex: 1,
+    height: "100%",
+    flexDirection: "column",
+    gap: 1,
+    alignItems: "flex-end",
     justifyContent: "center",
   },
+  date: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: 400,
+  },
+  time: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: 400,
+  },
+
   history: {
     textAlign: "center",
     color: "#CFE7F5",
     fontSize: 20,
   },
-  time: {
-    textAlign: "center",
-    color: "rgba(207,231,245,0.85)",
-    fontSize: 14,
-    marginTop: 4,
-  },
-  dotContainer: {
-    alignItems: "center",
-    justifyContent: "flex-end",
-  },
-  dotsRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.35)",
-  },
-  dotActive: {
-    backgroundColor: "rgba(255,255,255,0.8)",
-  },
-
 });
