@@ -1,43 +1,15 @@
 import { Feather } from "@expo/vector-icons";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from 'expo-router';
 import React from "react";
 import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Accordion from "../components/quicklock/accordion";
 import BottomNav from "../components/quicklock/bottom-nav";
 import { getUserInfo } from '../config/api';
 
-
-const CARD_WIDTH = 0.86;
-const LOCK_ID = "1"; 
-
-export default function Users() {
+export default function ShareAccess() {
   const router = useRouter();
-
-  const permanentUsers = [
-    { id: "1", name: "John Doe", lockLabel: "All Locks" },
-    { id: "2", name: "Jane Doe", lockLabel: "All Locks" },
-    { id: "3", name: "Mary Miller", lockLabel: "Front Door" },
-    { id: "4", name: "Jake Waters", lockLabel: "Garage Door" },
-  ];
-
-  const temporaryUsers = [
-    { id: "3", name: "Matt Smith", lockLabel: "Front Door" },
-  ];
-
-    
-  function UserRow({ name, rightLabel }: { name: string; rightLabel?: string }) {
-    return (
-      <View style={row.row}>
-        <Text style={row.name}>{name}</Text>
-        <View style={row.right}>
-          {rightLabel ? <Text style={row.label}>{rightLabel}</Text> : null}
-          <Feather name="chevron-right" size={16} color="rgba(233,244,255,0.7)" />
-        </View>
-      </View>
-    );
-  }
 
   const handleUserDetails = async () => {
     try {
@@ -58,41 +30,30 @@ export default function Users() {
 
         {/* Header */}
         <View style={styles.header}>
+          <Pressable style={styles.backContainer} onPress ={() => {if (router.canGoBack()) {router.back()}}}>
+            <View style={styles.avatar}><MaterialIcons name="arrow-back-ios-new" size={24} color="white" /></View>
+          </Pressable>
           <Pressable style={styles.avatarContainer} onPress ={handleUserDetails}>
             <View style={styles.avatar}><Feather name="user" size={24} color="#cfe7f5" /></View>
           </Pressable>
-          <Text style={styles.title}>Users</Text>
+        </View>
+
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>New User</Text>
         </View>
 
         <View style={styles.body}>
           <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollStyle} showsVerticalScrollIndicator={false}>
-            <Accordion title="Permanent Access">
-              {permanentUsers.map((u) => (
-                <UserRow key={u.id} name={u.name} rightLabel={u.lockLabel} />
-              ))}
-            </Accordion>
-
-            <Accordion title="Temporary Access">
-              {temporaryUsers.map((u) => (
-                <UserRow key={u.id} name={u.name} rightLabel={u.lockLabel} />
-              ))}
-            </Accordion>
-
-            <Accordion title="Cards">
-              <UserRow name="Card #1" rightLabel="John Doe" />
-            </Accordion>
 
           </ScrollView>
         </View>
 
         <View style={styles.footer}>
-
-           {/* TEMPORARY navigation to share access screen */}
-          <Pressable style={styles.shareBtn} onPress={() => router.push("/share-access")}> 
-            <Feather name="share-2" size={16} color="#E9F4FF" />
-            <Text style={styles.shareBtnText}>Share Access</Text>
+          <Pressable style={styles.shareBtn}>
+            <Text style={styles.shareBtnText}>Create New User</Text>
           </Pressable>
         </View>
+
 
         {/* Bottom nav */}
         <BottomNav active="users"/>
@@ -105,15 +66,18 @@ export default function Users() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    flexDirection: "column",
-    paddingHorizontal: "6%",
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: "3%",
-    marginBottom: "3%",
+    paddingHorizontal: "6%",
     alignItems: "center",
   }, 
+    backContainer: {
+    width: "auto"
+  },
     avatarContainer: {
-    width: "100%",
-    alignItems: "flex-end",
+    width: "auto"
   },
   avatar: {
     width: 44,
@@ -123,6 +87,11 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.35)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  titleContainer: {
+    flexDirection: "column",
+    marginBottom: "3%",
+    alignItems: "center",
   },
   title: {
     color: "#FFFFFF",
