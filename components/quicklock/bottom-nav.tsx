@@ -16,10 +16,10 @@ export default function BottomNav({ active, onChange }: { active: string, onChan
 
     return(
         <View style={styles.navBar}>
-            <NavItem icon="home" active={active === "home"} onPress={() => router.replace("/home")} />
-            <NavItem icon="users" active={active === "users"} onPress={() => router.replace("/users")} />
-            <NavItem icon="file-text" active={active === "file-text"} onPress={() => router.replace("/activity-log")} />
-            <NavItem icon="settings" active={active === "settings"} onPress={() => router.replace("/home")} />
+            <NavItem icon="home" active={active === "home"} onPress={() => {if (router.canGoBack()) {router.back()} else router.replace("/home")}} />
+            <NavItem icon="users" active={active === "users"} onPress={() => {if (router.canGoBack()) {router.back()} else router.replace("/users")}} />
+            <NavItem icon="file-text" active={active === "file-text"} onPress={() => {if (router.canGoBack()) {router.back()} else router.replace("/activity-log")}} />
+            <NavItem icon="settings" active={active === "settings"} onPress={() => {if (router.canGoBack()) {router.back()} else router.replace("/home")}} />
         </View>
     )
 }

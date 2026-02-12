@@ -28,7 +28,8 @@ export default function RootLayout() {
         <Stack.Screen name="home" />
         <Stack.Screen name="account" />
         <Stack.Screen name="activity-log" />
-
+        <Stack.Screen name="users" />
+        <Stack.Screen name="share-access" />
       </Stack>
 
       <StatusBar style="light" />

@@ -12,7 +12,7 @@ import Variables from '../assets/styles/variables';
 
 const CARD_WIDTH = 0.86; 
 
-export default function Settings() {
+export default function Account() {
   const router = useRouter();
 
   const [email, setEmail] = useState('');
@@ -34,8 +34,8 @@ export default function Settings() {
         {/* Header */}
         <View style={styles.header}>
           
-          <View style={styles.pressableContainer}>
-            <Pressable style={styles.avatarContainer} onPress ={() => router.push("/home")}>
+          <View style={styles.backContainer}>
+            <Pressable style={styles.avatarContainer} onPress ={() => {if (router.canGoBack()) {router.back()}}}>
               <View style={styles.avatar}><MaterialIcons name="arrow-back-ios-new" size={24} color="white" /></View>
             </Pressable>
           </View>
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     marginTop: "3%",
     alignItems: "center",
   },
-  pressableContainer: {
+  backContainer: {
     width:"100%",
     paddingLeft: "3%",
   },
