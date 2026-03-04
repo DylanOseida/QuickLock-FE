@@ -94,8 +94,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   toggleCard: {
-    width: "86%",   // match your input width
-    alignSelf: "center",
+    width: "86%",
+    alignSelf:"center",
   },
   header: {
     paddingHorizontal: 16,

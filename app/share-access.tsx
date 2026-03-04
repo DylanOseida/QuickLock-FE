@@ -19,7 +19,23 @@ export default function ShareAccess() {
   const [email, setEmail] = useState('');
   const [keyName, setKeyName] = useState('');
 
-  
+    const locks = [
+    { id: "1", lockLabel: "Front Door" },
+    { id: "2", lockLabel: "Back Door" },
+    { id: "3", lockLabel: "Garage Door" },
+  ];
+
+  function LockRow({ id, lockLabel }: { id: string; lockLabel?: string }) {
+    return (
+      <View style={row.row}>
+        <Text style={row.name}>{id}</Text>
+        <View style={row.right}>
+          {lockLabel ? <Text style={row.label}>{lockLabel}</Text> : null}
+          <Feather name="chevron-right" size={16} color="rgba(233,244,255,0.7)" />
+        </View>
+      </View>
+    );
+  }
 
   const handleUserDetails = async () => {
     try {
@@ -94,6 +110,13 @@ export default function ShareAccess() {
 
             <Accordion title="Permanent Access" variant="toggle">
               <DateTime />
+            </Accordion>
+
+            
+            <Accordion title="Lock Permissions">
+              {locks.map((u) => (
+                <LockRow key={u.id} id={u.id} lockLabel={u.lockLabel} />
+              ))}
             </Accordion>
 
           </ScrollView>
@@ -238,6 +261,8 @@ cardContainer: {
 
 const row = StyleSheet.create({
   row: {
+    width: "86%",
+    alignSelf: "center",
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255,255,255,0.10)",
