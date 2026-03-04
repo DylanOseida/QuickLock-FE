@@ -58,9 +58,9 @@ export default function Users() {
 
         {/* Header */}
         <View style={styles.header}>
-          <Pressable style={styles.avatarContainer} onPress ={handleUserDetails}>
-            <View style={styles.avatar}><Feather name="user" size={24} color="#cfe7f5" /></View>
-          </Pressable>
+          <View style={styles.avatarContainer}>
+            <Pressable style={styles.avatar} onPress ={handleUserDetails}><Feather name="user" size={24} color="#cfe7f5" /></Pressable>
+          </View>
           <Text style={styles.title}>Users</Text>
         </View>
 
@@ -82,17 +82,18 @@ export default function Users() {
               <UserRow name="Card #1" rightLabel="John Doe" />
             </Accordion>
 
+            <View style={styles.footer}>
+
+              {/* TEMPORARY navigation to share access screen */}
+              <Pressable style={styles.shareBtn} onPress={() => router.push("/share-access")}> 
+                <Feather name="share-2" size={16} color="#E9F4FF" />
+                <Text style={styles.shareBtnText}>Share Access</Text>
+              </Pressable>
+            </View>
+
           </ScrollView>
         </View>
 
-        <View style={styles.footer}>
-
-           {/* TEMPORARY navigation to share access screen */}
-          <Pressable style={styles.shareBtn} onPress={() => router.push("/share-access")}> 
-            <Feather name="share-2" size={16} color="#E9F4FF" />
-            <Text style={styles.shareBtnText}>Share Access</Text>
-          </Pressable>
-        </View>
 
         {/* Bottom nav */}
         <BottomNav active="users"/>
@@ -137,14 +138,14 @@ const styles = StyleSheet.create({
    },
    scrollStyle: {
     paddingBottom: "20%",
-    gap: "5%", 
+    gap: 15, 
    },
 
   footer: {
     height: "auto",
     width: "100%",
-    paddingHorizontal: "7%",
-    marginBottom: "5%",
+
+    marginVertical: "5%",
     justifyContent: "center",
     alignContent: "center",
   },

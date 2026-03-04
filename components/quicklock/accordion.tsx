@@ -1,14 +1,18 @@
 import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import Collapsible from "react-native-collapsible";
 
 type Props = {
   title: string;
   defaultOpen?: boolean;
   children: React.ReactNode;
-  rightActionIcon?: keyof typeof Feather.glyphMap; // optional (e.g. "plus")
+
+  rightActionIcon?: keyof typeof Feather.glyphMap;
   onRightActionPress?: () => void;
+
+  // NEW
+  variant?: "plusminus" | "toggle";
 };
 
 export default function Accordion({
@@ -17,23 +21,45 @@ export default function Accordion({
   children,
   rightActionIcon,
   onRightActionPress,
+  variant = "plusminus", // default keeps old behavior everywhere
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
 
+  const toggleOpen = () => setOpen((v) => !v);
+
+  // Switch value is "closed" (inverted)
+  const closed = !open;
+
   return (
-    <View style={styles.card}>
+    <View
+      style={[
+        styles.card,
+        variant === "toggle" && styles.toggleCard
+      ]}
+    >
       <Pressable
-        onPress={() => setOpen((v) => !v)}
+        onPress={toggleOpen}
         style={({ pressed }) => [styles.header, pressed && { opacity: 0.9 }]}
       >
         <Text style={styles.title}>{title}</Text>
 
         <View style={styles.right}>
-          {/* optional right action (like your "Cards +" header) */}
-          {rightActionIcon ? (
+          {variant === "toggle" ? (
+            <Switch
+              value={closed} // ON = closed, OFF = open
+              onValueChange={(isClosed) => setOpen(!isClosed)}
+              trackColor={{
+                false: "rgba(233,244,255,0.22)",
+                true: "rgba(207,231,245,0.45)",
+              }}
+              thumbColor={
+                Platform.OS === "android" ? "rgba(233,244,255,0.95)" : undefined
+              }
+              ios_backgroundColor="rgba(233,244,255,0.22)"
+            />
+          ) : rightActionIcon ? (
             <Pressable
               onPress={(e) => {
-                // prevent toggling when pressing right icon
                 e.stopPropagation?.();
                 onRightActionPress?.();
               }}
@@ -66,6 +92,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.10)",
     overflow: "hidden",
+  },
+  toggleCard: {
+    width: "86%",   // match your input width
+    alignSelf: "center",
   },
   header: {
     paddingHorizontal: 16,

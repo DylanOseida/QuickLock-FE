@@ -196,3 +196,41 @@ export async function toggleLock(lockId = "1") {
     return null;
   }
 }
+
+const GENERATE_KEY_ENDPOINT = `${BASE_URL}/embedded/generate_key/`;
+
+/**
+ * Call backend to generate a key for a user (admin-only endpoint).
+ * data should include fields required by KeyGenerationSerializer:
+ * { username, not_valid_after, not_valid_before, key_name, lock_id }
+ */
+export async function generateKey(data) {
+  const token = await getAccessToken();
+  if (!token) {
+    const err = new Error("No access token available");
+    err.status = 401;
+    throw err;
+  }
+
+  const res = await fetch(GENERATE_KEY_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const text = await res.text();
+  let payload;
+  try { payload = text ? JSON.parse(text) : {}; } catch (e) { payload = text; }
+
+  if (!res.ok) {
+    const err = new Error("generateKey failed");
+    err.status = res.status;
+    err.payload = payload;
+    throw err;
+  }
+
+  return payload;
+}

@@ -97,9 +97,9 @@ export default function Home() {
 
         {/* Header */}
         <View style={styles.header}>
-          <Pressable style={styles.avatarContainer} onPress ={handleUserDetails}>
-            <View style={styles.avatar}><Feather name="user" size={24} color="#cfe7f5" /></View>
-          </Pressable>
+          <View style={styles.avatarContainer}>
+            <Pressable style={styles.avatar} onPress ={handleUserDetails}><Feather name="user" size={24} color="#cfe7f5" /></Pressable>
+          </View>
           <Text style={styles.title}>Home</Text>
         </View>
 
@@ -160,6 +160,8 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+
+  /*HEADER*/
   container: { flex: 1 },
   header: {
     flexDirection: "column",

@@ -11,7 +11,7 @@ const Variables = StyleSheet.create({
 
     /********* Buttons *********/
     buttons: {
-        width: '75%',
+        width: '85%',
         borderWidth: 2,
         borderColor: 'white',
         paddingVertical: 10,
@@ -38,7 +38,7 @@ const Variables = StyleSheet.create({
 
     /********* Input Style *********/
     inputStyle: {
-        width: '75%',
+        width: '86%',
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 2,
