@@ -1,11 +1,12 @@
 import { Feather } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import Collapsible from "react-native-collapsible";
 
 type Props = {
   title: string;
   defaultOpen?: boolean;
+  alwaysOpen?: boolean;
   children: React.ReactNode;
 
   rightActionIcon?: keyof typeof Feather.glyphMap;
@@ -18,25 +19,29 @@ type Props = {
 export default function Accordion({
   title,
   defaultOpen = false,
+  alwaysOpen = false,
   children,
   rightActionIcon,
   onRightActionPress,
-  variant = "plusminus", // default keeps old behavior everywhere
-}: Props) {
-  const [open, setOpen] = useState(defaultOpen);
+  variant = "plusminus",
+  }: Props) {
 
-  const toggleOpen = () => setOpen((v) => !v);
+  const [open, setOpen] = useState(false);
 
-  // Switch value is "closed" (inverted)
-  const closed = !open;
+  useEffect(() => {
+    if (defaultOpen) {
+      // open after first layout pass so Collapsible can measure content height
+      requestAnimationFrame(() => setOpen(true));
+    }
+  }, [defaultOpen]);
+
+  const toggleOpen = () => {
+    if (alwaysOpen) return; 
+    setOpen((v) => !v);
+  };  const closed = !open;
 
   return (
-    <View
-      style={[
-        styles.card,
-        variant === "toggle" && styles.toggleCard
-      ]}
-    >
+    <View style={[styles.card, variant === "toggle" && styles.toggleCard]}>
       <Pressable
         onPress={toggleOpen}
         style={({ pressed }) => [styles.header, pressed && { opacity: 0.9 }]}
@@ -46,14 +51,16 @@ export default function Accordion({
         <View style={styles.right}>
           {variant === "toggle" ? (
             <Switch
-              value={closed} // ON = closed, OFF = open
+              value={!open}
               onValueChange={(isClosed) => setOpen(!isClosed)}
               trackColor={{
                 false: "rgba(233,244,255,0.22)",
                 true: "rgba(207,231,245,0.45)",
               }}
               thumbColor={
-                Platform.OS === "android" ? "rgba(233,244,255,0.95)" : undefined
+                Platform.OS === "android"
+                  ? "rgba(233,244,255,0.95)"
+                  : undefined
               }
               ios_backgroundColor="rgba(233,244,255,0.22)"
             />
@@ -66,21 +73,29 @@ export default function Accordion({
               hitSlop={10}
               style={styles.iconBtn}
             >
-              <Feather name={rightActionIcon} size={18} color="rgba(233,244,255,0.95)" />
+              <Feather
+                name={rightActionIcon}
+                size={18}
+                color="rgba(233,244,255,0.95)"
+              />
             </Pressable>
-          ) : (
+          ) : !alwaysOpen ? (   // 👈 THIS is the key line
             <Feather
               name={open ? "minus" : "plus"}
               size={18}
               color="rgba(233,244,255,0.95)"
             />
-          )}
+          ) : null}
         </View>
       </Pressable>
 
-      <Collapsible collapsed={!open}>
+      {alwaysOpen ? (
         <View style={styles.content}>{children}</View>
-      </Collapsible>
+      ) : (
+        <Collapsible collapsed={!open} align="top">
+          <View style={styles.content}>{children}</View>
+        </Collapsible>
+      )}
     </View>
   );
 }
@@ -94,7 +109,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   toggleCard: {
-    width: "86%",
+    width: "100%",
     alignSelf:"center",
   },
   header: {
