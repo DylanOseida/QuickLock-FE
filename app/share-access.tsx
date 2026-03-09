@@ -1,10 +1,20 @@
 import { Feather } from "@expo/vector-icons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import dayjs from "dayjs";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Pressable, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, View, } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Colors from "../assets/styles/colors";
 import Variables from "../assets/styles/variables";
@@ -17,7 +27,6 @@ import { generateKey, getUserInfo } from "../config/api";
 const LOCKS = [{ id: "1", lockLabel: "Front Door" }];
 
 export default function ShareAccess() {
-
   const midnight = new Date();
   midnight.setHours(0, 0, 0, 0);
 
@@ -25,7 +34,7 @@ export default function ShareAccess() {
   const [email, setEmail] = useState("");
   const [keyName, setKeyName] = useState("");
   const [startValue, setStartValue] = useState<Date>(midnight);
-  const [endValue, setEndValue] = useState<Date | null>(null);  // null = “no end date” unless checked
+  const [endValue, setEndValue] = useState<Date | null>(null); // null = “no end date” unless checked
   const [endEnabled, setEndEnabled] = useState(false);
 
   // keep array for future multi-lock support
@@ -36,7 +45,9 @@ export default function ShareAccess() {
 
     const toggleLock = () => {
       setSelectedLocks((prev) =>
-        prev.includes(id) ? prev.filter((lockId) => lockId !== id) : [...prev, id]
+        prev.includes(id)
+          ? prev.filter((lockId) => lockId !== id)
+          : [...prev, id],
       );
     };
 
@@ -81,26 +92,28 @@ export default function ShareAccess() {
         return;
       }
 
-      const lock_id = Number(selectedLocks[0]);
+      const lock_id = selectedLocks[0];
 
-      // REQUIRED: start date/time
-      const not_valid_before = startValue.toISOString();
+      const not_valid_before = dayjs(startValue).format("YYYY-MM-DD HH:mm:ss");
 
-      // OPTIONAL: end date/time (permanent access if null)
       const not_valid_after =
-        endEnabled && endValue ? endValue.toISOString() : null;
+        endEnabled && endValue
+          ? dayjs(endValue).format("YYYY-MM-DD HH:mm:ss")
+          : null;
 
-      // validation if end date exists
-      if (not_valid_after && new Date(not_valid_after) < new Date(not_valid_before)) {
+      if (
+        not_valid_after &&
+        dayjs(not_valid_after).isBefore(dayjs(not_valid_before))
+      ) {
         console.warn("End date/time must be after start date/time");
         return;
       }
 
       const payload = {
-        username: email.trim(),     // must match AuthUser.username
+        username: email.trim(),
         key_name: keyName.trim(),
         not_valid_before,
-        not_valid_after,            // null => permanent
+        not_valid_after,
         lock_id,
       };
 
@@ -109,12 +122,19 @@ export default function ShareAccess() {
 
       router.back();
     } catch (err: any) {
-      console.error("generateKey failed:", err?.status, err?.payload || err?.message);
+      console.error(
+        "generateKey failed:",
+        err?.status,
+        err?.payload || err?.message,
+      );
     }
   };
 
   return (
-    <LinearGradient colors={["#0E1927", "#1D3047"]} style={StyleSheet.absoluteFillObject}>
+    <LinearGradient
+      colors={["#0E1927", "#1D3047"]}
+      style={StyleSheet.absoluteFillObject}
+    >
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}
@@ -126,7 +146,11 @@ export default function ShareAccess() {
                 if (router.canGoBack()) router.back();
               }}
             >
-              <MaterialIcons name="arrow-back-ios-new" size={24} color="white" />
+              <MaterialIcons
+                name="arrow-back-ios-new"
+                size={24}
+                color="white"
+              />
             </Pressable>
           </View>
           <View style={styles.avatarContainer}>
@@ -225,11 +249,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: "6%",
     alignItems: "center",
   },
-  backContainer: { 
-    width: "auto" 
+  backContainer: {
+    width: "auto",
   },
-  avatarContainer: { 
-    width: "auto" 
+  avatarContainer: {
+    width: "auto",
   },
   avatar: {
     width: 44,
@@ -240,31 +264,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  titleContainer: { 
-    flexDirection: "column", 
-    alignItems: "center" 
+  titleContainer: {
+    flexDirection: "column",
+    alignItems: "center",
   },
-  title: { 
-    color: "#FFFFFF", 
-    fontSize: 55, 
-    fontWeight: "800" 
+  title: {
+    color: "#FFFFFF",
+    fontSize: 55,
+    fontWeight: "800",
   },
-  body: { 
-    flex: 1, 
-    paddingBottom: "5%", 
-    paddingHorizontal: "7%" 
+  body: {
+    flex: 1,
+    paddingBottom: "5%",
+    paddingHorizontal: "7%",
   },
-  scrollStyle: { 
-    paddingBottom: "20%", 
-    gap: 15 
+  scrollStyle: {
+    paddingBottom: "20%",
+    gap: 15,
   },
-  subTitleContainer: { 
-    width: "100%", 
-    marginTop: "8%" 
+  subTitleContainer: {
+    width: "100%",
+    marginTop: "8%",
   },
-  subTitle: { 
-    color: "#E9F4FF", 
-    fontSize: 25 
+  subTitle: {
+    color: "#E9F4FF",
+    fontSize: 25,
   },
   inputStyle: {
     width: "100%",
@@ -276,14 +300,14 @@ const styles = StyleSheet.create({
     borderColor: "white",
     backgroundColor: Colors.text_input,
   },
-  icon: { 
-    marginLeft: 5, 
-    marginRight: 5, 
-    color: Colors.placeholder 
+  icon: {
+    marginLeft: 5,
+    marginRight: 5,
+    color: Colors.placeholder,
   },
-  input: { 
-    ...Variables.input, 
-    textAlignVertical: "center" 
+  input: {
+    ...Variables.input,
+    textAlignVertical: "center",
   },
   footer: {
     height: "auto",
@@ -302,10 +326,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
   },
-  shareBtnText: { 
-    color: "#E9F4FF", 
-    fontSize: 16, 
-    fontWeight: "700" 
+  shareBtnText: {
+    color: "#E9F4FF",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });
 
@@ -319,8 +343,8 @@ const row = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  name: { 
-    color: "#E9F4FF", 
-    fontSize: 16 
+  name: {
+    color: "#E9F4FF",
+    fontSize: 16,
   },
 });

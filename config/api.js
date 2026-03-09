@@ -1,8 +1,8 @@
-import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import axios from "axios";
+import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
-export const BASE_URL = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:8000`; 
+export const BASE_URL = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:8000`;
 //export const ESP32_URL = "http://192.168.X.X"
 const REGISTER_ENDPOINT = `${BASE_URL}/auth/register_user/`;
 const LOGIN_ENDPOINT = `${BASE_URL}/auth/login/`;
@@ -13,27 +13,29 @@ export async function saveTokens(tokens) {
   if (!tokens) return;
 
   try {
-    if (Platform.OS === 'web') {
-      if (tokens.access) localStorage.setItem('accessToken', tokens.access);
-      if (tokens.refresh) localStorage.setItem('refreshToken', tokens.refresh);
+    if (Platform.OS === "web") {
+      if (tokens.access) localStorage.setItem("accessToken", tokens.access);
+      if (tokens.refresh) localStorage.setItem("refreshToken", tokens.refresh);
     } else {
-      if (tokens.access) await SecureStore.setItemAsync('accessToken', tokens.access);
-      if (tokens.refresh) await SecureStore.setItemAsync('refreshToken', tokens.refresh);
+      if (tokens.access)
+        await SecureStore.setItemAsync("accessToken", tokens.access);
+      if (tokens.refresh)
+        await SecureStore.setItemAsync("refreshToken", tokens.refresh);
     }
   } catch (err) {
-    console.error('Failed to save tokens:', err);
+    console.error("Failed to save tokens:", err);
   }
 }
 
 export async function getAccessToken() {
   try {
-    if (Platform.OS === 'web') {
-      return localStorage.getItem('accessToken');
+    if (Platform.OS === "web") {
+      return localStorage.getItem("accessToken");
     } else {
-      return await SecureStore.getItemAsync('accessToken');
+      return await SecureStore.getItemAsync("accessToken");
     }
   } catch (err) {
-    console.error('Failed to read access token:', err);
+    console.error("Failed to read access token:", err);
     return null;
   }
 }
@@ -51,7 +53,6 @@ export async function getUserInfo() {
   return response.data;
 }
 
-
 export async function registerUser(userData) {
   try {
     const response = await fetch(REGISTER_ENDPOINT, {
@@ -62,23 +63,31 @@ export async function registerUser(userData) {
 
     const text = await response.text();
     let data;
-    try { data = text ? JSON.parse(text) : {}; } catch (e) { data = text; }
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch (e) {
+      data = text;
+    }
 
     if (!response.ok) {
-      const err = new Error('Registration failed');
+      const err = new Error("Registration failed");
       err.status = response.status;
       err.payload = data;
       throw err;
     }
     return data;
   } catch (err) {
-    console.error("registerUser error:", err.status, err.payload || err.message);
+    console.error(
+      "registerUser error:",
+      err.status,
+      err.payload || err.message,
+    );
     throw err;
   }
 }
 
 export async function sendLockState(state) {
-  const url = `${ESP32_URL}/${state}`; 
+  const url = `${ESP32_URL}/${state}`;
 
   try {
     const res = await fetch(url, {
@@ -98,14 +107,17 @@ export async function fetchNFCStatus() {
     const res = await fetch(`${ESP32_URL}/nfc-status`);
     const text = await res.text();
     let data;
-    try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { raw: text };
+    }
     return data;
   } catch (err) {
     console.error("Failed to fetch NFC status:", err);
     return { authorized: false, uid: "" };
   }
 }
-
 
 //Login User
 export async function loginUser({ username, password }) {
@@ -117,10 +129,14 @@ export async function loginUser({ username, password }) {
 
   const text = await res.text();
   let data;
-  try { data = text ? JSON.parse(text) : {}; } catch (e) { data = text; }
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (e) {
+    data = text;
+  }
 
   if (!res.ok) {
-    const err = new Error('Login failed');
+    const err = new Error("Login failed");
     err.status = res.status;
     err.payload = data;
     throw err;
@@ -152,7 +168,6 @@ export async function fetchLockStatus(lockId = "1") {
 
     console.warn("Unexpected lockStatus response:", data);
     return null;
-
   } catch (err) {
     console.error("Error fetching lock status:", err);
     return null;
@@ -172,12 +187,12 @@ export async function toggleLock(lockId = "1") {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ lock_id: lockId }),
     });
 
-    const data = await res.json(); 
+    const data = await res.json();
 
     if (!res.ok) {
       console.error("Failed to toggle lock. HTTP:", res.status, data);
@@ -189,15 +204,15 @@ export async function toggleLock(lockId = "1") {
     }
 
     console.warn("Unexpected toggleLock response format:", data);
-    return null;
 
+    return null;
   } catch (err) {
     console.error("Error calling mobile_request API:", err);
     return null;
   }
 }
 
-const GENERATE_KEY_ENDPOINT = `${BASE_URL}/embedded/generate_key/`;
+const GENERATE_KEY_ENDPOINT = `${BASE_URL}/access/generate_key/`;
 
 /**
  * Call backend to generate a key for a user (admin-only endpoint).
@@ -216,14 +231,18 @@ export async function generateKey(data) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
 
   const text = await res.text();
   let payload;
-  try { payload = text ? JSON.parse(text) : {}; } catch (e) { payload = text; }
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch (e) {
+    payload = text;
+  }
 
   if (!res.ok) {
     const err = new Error("generateKey failed");
