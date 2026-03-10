@@ -17,7 +17,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Colors from "../assets/styles/colors";
 import Variables from "../assets/styles/variables";
-import BottomNav from "../components/quicklock/bottom-nav";
 
 const CARD_WIDTH = 0.86;
 
@@ -43,22 +42,7 @@ export default function Account() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.backContainer}>
-            <Pressable
-              style={styles.avatarContainer}
-              onPress={() => {
-                if (router.canGoBack()) {
-                  router.back();
-                }
-              }}
-            >
-              <View style={styles.avatar}>
-                <MaterialIcons
-                  name="arrow-back-ios-new"
-                  size={24}
-                  color="white"
-                />
-              </View>
-            </Pressable>
+            <Pressable style={styles.avatar} onPress ={() => {if (router.canGoBack()) {router.back()}}}><MaterialIcons name="arrow-back-ios-new" size={24} color="white" /></Pressable>
           </View>
 
           <Text style={styles.title}>Account</Text>
@@ -136,16 +120,14 @@ export default function Account() {
             </TouchableOpacity>
           </View>
         </View>
-        {/* Footer */}
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={styles.signUpButton}
-            onPress={() => router.push("/")}
-          >
-            <Text style={styles.signUpText}>Log Out</Text>
-          </TouchableOpacity>
-        </View>
-        <BottomNav active="settings" />
+        
+      {/* Footer */}
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.signUpButton} onPress={() => router.push('/')}>
+          <Text style={styles.signUpText}>Log Out</Text>
+        </TouchableOpacity>
+      </View>
+
       </SafeAreaView>
     </LinearGradient>
   );
@@ -160,11 +142,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "column",
     marginTop: "3%",
+    paddingHorizontal: "6%",
     alignItems: "center",
   },
   backContainer: {
-    width: "100%",
-    paddingLeft: "3%",
+    width:"100%",
   },
   avatarContainer: {
     width: "10%",
@@ -174,8 +156,11 @@ const styles = StyleSheet.create({
   avatar: {
     width: 44,
     height: 44,
-    justifyContent: "center",
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.35)",
     alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     color: "#FFFFFF",
@@ -185,10 +170,9 @@ const styles = StyleSheet.create({
   },
 
   /*BODY*/
-  form: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: "5%",
+  form: { 
+    alignItems: 'center', 
+    justifyContent: 'center', 
   },
   userDetail: {
     width: "100%",
@@ -196,7 +180,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   subTitleContainer: {
-    width: "75%",
+    width: "86%",
     marginTop: "8%",
   },
   subTitle: {
