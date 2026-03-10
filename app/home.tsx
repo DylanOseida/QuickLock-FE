@@ -5,11 +5,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../components/quicklock/bottom-nav";
-import { fetchLockStatus, getUserInfo, toggleLock } from '../config/api';
+import { fetchLockStatus, getStoredLockId, getUserInfo, toggleLock } from '../config/api';
 
 
 const CARD_WIDTH = 0.86;
-const LOCK_ID = "1"; 
 
 export default function Home() {
   const [locked, setLocked] = useState(false);
@@ -17,21 +16,46 @@ export default function Home() {
   const holdAnim = useRef(new Animated.Value(0)).current;
   const holdTimer = useRef<number | null>(null);
   const router = useRouter();
+  const [lockId, setLockId] = useState<string | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
 
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
 
-    const interval = setInterval(async () => {
-      const status = await fetchLockStatus(LOCK_ID); 
+    const start = async () => {
+      const id = await getStoredLockId(); // string | null
 
-      if (!isMounted || status === null || status === undefined) return;
+      if (!mounted) return;
 
-      setLocked(!status); 
-    }, 1000);
+      if (!id) {
+        console.warn("No lockId stored. Did login save it?");
+        return;
+      }
+
+      setLockId(id);
+
+      // initial fetch
+      const status = await fetchLockStatus(); // uses stored id
+      if (mounted && typeof status === "boolean") {
+        setLocked(status);
+      }
+
+      // poll
+      intervalRef.current = setInterval(async () => {
+        const s = await fetchLockStatus();
+        if (mounted && typeof s === "boolean") setLocked(s);
+      }, 1000);
+    };
+
+    start();
 
     return () => {
-      isMounted = false;
-      clearInterval(interval);
+      mounted = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
   }, []);
 
@@ -45,10 +69,9 @@ export default function Home() {
 
     holdTimer.current = setTimeout(() => {
       (async () => {
-        const newStatus = await toggleLock(LOCK_ID); 
-
-        if (newStatus === true || newStatus === false) {
-          setLocked(!newStatus); 
+        const newStatus = await toggleLock(); // uses stored lockId
+        if (typeof newStatus === "boolean") {
+          setLocked(newStatus);
         }
       })();
 

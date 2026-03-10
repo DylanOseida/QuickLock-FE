@@ -3,11 +3,12 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
 export const BASE_URL = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:8000`;
+
 //export const ESP32_URL = "http://192.168.X.X"
 const REGISTER_ENDPOINT = `${BASE_URL}/auth/register_user/`;
 const LOGIN_ENDPOINT = `${BASE_URL}/auth/login/`;
-const LOCK_STATUS_ENDPOINT = `${BASE_URL}/embedded/request_status/`;
-const LOCK_ACTION_ENDPOINT = `${BASE_URL}/embedded/mobile_request/`;
+const LOCK_STATUS_ENDPOINT = (id) => `${BASE_URL}/access/Locks/${id}/status/`;
+const LOCK_ACTION_ENDPOINT = (id) => `${BASE_URL}/access/Locks/${id}/mobile_unlock/`;
 
 export async function saveTokens(tokens) {
   if (!tokens) return;
@@ -145,74 +146,97 @@ export async function loginUser({ username, password }) {
   return data;
 }
 
-export async function fetchLockStatus(lockId = "1") {
+export async function fetchLockStatus() {
+  const lockId = await getStoredLockId();
+  if (!lockId) throw new Error("No lockId stored");
+
+  const res = await fetch(LOCK_STATUS_ENDPOINT(lockId), {
+    method: "GET",
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    console.error("Failed to fetch lock status:", res.status, data);
+    return null;
+  }
+
+  return data.status;
+}
+
+export async function fetchLocks() {
+  const token = await getAccessToken();
+  if (!token) throw new Error("No access token");
+
   try {
-    const res = await fetch(LOCK_STATUS_ENDPOINT, {
-      method: "POST",
+    const res = await axios.get(`${BASE_URL}/access/Locks/`, {
       headers: {
-        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ lock_id: lockId }),
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error("Failed to fetch lock status. HTTP:", res.status, data);
-      return null;
-    }
-
-    if (typeof data.lock_status === "boolean") {
-      return data.lock_status;
-    }
-
-    console.warn("Unexpected lockStatus response:", data);
-    return null;
+    return res.data;
   } catch (err) {
-    console.error("Error fetching lock status:", err);
-    return null;
+    // axios puts server response info here (if server responded)
+    const status = err.response?.status;
+    const data = err.response?.data;
+
+    console.error("Failed to fetch locks:", status, data || err.message);
+    throw err;
   }
 }
 
-export async function toggleLock(lockId = "1") {
-  const token = await getAccessToken();
+export async function saveLockId(lockId) {
+  const value = String(lockId);
 
+  if (Platform.OS === "web") {
+    localStorage.setItem("lockId", value);
+  } else {
+    await SecureStore.setItemAsync("lockId", value);
+  }
+}
+
+export async function getStoredLockId() {
+  if (Platform.OS === "web") {
+    return localStorage.getItem("lockId");
+  } else {
+    return await SecureStore.getItemAsync("lockId");
+  }
+}
+
+export async function toggleLock() {
+  const token = await getAccessToken();
   if (!token) {
     console.warn("No access token available; cannot toggle lock.");
     return null;
   }
 
-  try {
-    const res = await fetch(LOCK_ACTION_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ lock_id: lockId }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error("Failed to toggle lock. HTTP:", res.status, data);
-      return null;
-    }
-
-    if (typeof data.lock_status === "boolean") {
-      return data.lock_status;
-    }
-
-    console.warn("Unexpected toggleLock response format:", data);
-
-    return null;
-  } catch (err) {
-    console.error("Error calling mobile_request API:", err);
+  const lockId = await getStoredLockId();
+  if (!lockId) {
+    console.warn("No lockId stored; cannot toggle lock.");
     return null;
   }
+
+  const res = await fetch(LOCK_ACTION_ENDPOINT(lockId), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ lock_id: Number(lockId) }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    console.error("Failed to toggle lock. HTTP:", res.status, data);
+    return null;
+  }
+
+  return data.lock_status;
 }
 
-const GENERATE_KEY_ENDPOINT = `${BASE_URL}/access/generate_key/`;
+const GENERATE_KEY_ENDPOINT = `${BASE_URL}/access/Keys/`;
 
 /**
  * Call backend to generate a key for a user (admin-only endpoint).

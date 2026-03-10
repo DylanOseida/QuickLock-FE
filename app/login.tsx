@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import Colors from "../assets/styles/colors";
 import Variables from "../assets/styles/variables";
-import { loginUser, saveTokens } from "../config/api";
+import { fetchLocks, loginUser, saveLockId, saveTokens } from "../config/api";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -45,6 +45,21 @@ export default function LoginScreen() {
 
       // Save tokens if present (function handles different shapes)
       await saveTokens(resp);
+
+      // Fetch locks for this user
+      const locks = await fetchLocks();
+
+      if (!Array.isArray(locks) || locks.length === 0) {
+        alert("No locks assigned to this account.");
+        return;
+      }
+
+      // For now, use the first lock
+      const firstLockId = locks[0].lock_id;
+
+      await saveLockId(firstLockId);
+
+      router.replace("/home");
 
       // If your backend returns no tokens (session cookie approach), you may need to
       // rely on cookie-based auth (not covered here) or change backend to return JWTs.

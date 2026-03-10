@@ -110,7 +110,8 @@ export default function ShareAccess() {
       }
 
       const payload = {
-        username: email.trim(),
+        administrator: 65,
+        user_email: email.trim(),
         key_name: keyName.trim(),
         not_valid_before,
         not_valid_after,
