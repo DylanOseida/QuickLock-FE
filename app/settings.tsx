@@ -1,5 +1,4 @@
 import { Feather } from "@expo/vector-icons";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -7,13 +6,14 @@ import {
   Pressable,
   StatusBar,
   StyleSheet,
-  Switch,
   Text,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Accordion from "../components/quicklock/accordion";
 import BottomNav from "../components/quicklock/bottom-nav";
 import { getUserInfo } from "../config/api";
+
 
 export default function Settings() {
   const router = useRouter();
@@ -40,11 +40,11 @@ export default function Settings() {
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.header}>
           <View />
-          <Pressable style={styles.avatarContainer} onPress={handleUserDetails}>
-            <View style={styles.avatar}>
-              <Feather name="user" size={24} color="#cfe7f5" />
-            </View>
-          </Pressable>
+            <Pressable style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <Feather name="user" size={24} color="#cfe7f5" />
+              </View>
+            </Pressable>
         </View>
 
         <View style={styles.titleContainer}>
@@ -52,43 +52,26 @@ export default function Settings() {
         </View>
 
         <View style={styles.body}>
-          <Pressable
-            style={styles.card}
-            onPress={() => router.push("/account")}
-          >
-            <Text style={styles.cardText}>Account Settings</Text>
-            <MaterialIcons
-              name="keyboard-arrow-right"
-              size={24}
-              color="rgba(233,244,255,0.8)"
-            />
-          </Pressable>
 
-          <Pressable
-            style={styles.card}
+          {/* Account Settings */}
+
+          <Accordion
+            title="Account Settings"
+            variant="link"
+            onPress={handleUserDetails}
+          />
+
+          {/* Device Settings */}
+
+          <Accordion
+            title="Device Settings"
+            variant="link"
             onPress={() => router.push("/devices")}
-          >
-            <Text style={styles.cardText}>Manage Devices</Text>
-            <MaterialIcons
-              name="keyboard-arrow-right"
-              size={24}
-              color="rgba(233,244,255,0.8)"
-            />
-          </Pressable>
+          />
 
           {/* Notifications */}
-          <View style={styles.card}>
-            <Text style={styles.cardText}>Notifications</Text>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-              trackColor={{
-                false: "rgba(255,255,255,0.2)",
-                true: "#4DA3FF",
-              }}
-              thumbColor="#ffffff"
-            />
-          </View>
+          <Accordion title="Notifications" variant="toggle"/>
+
         </View>
 
         {/* Bottom Nav */}
@@ -106,6 +89,8 @@ const styles = StyleSheet.create({
     marginTop: "3%",
     paddingHorizontal: "6%",
     alignItems: "center",
+    opacity: 0,
+    pointerEvents: "none",
   },
   avatarContainer: {
     width: "auto",

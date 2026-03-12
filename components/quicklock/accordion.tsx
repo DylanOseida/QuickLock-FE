@@ -7,13 +7,14 @@ type Props = {
   title: string;
   defaultOpen?: boolean;
   alwaysOpen?: boolean;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 
   rightActionIcon?: keyof typeof Feather.glyphMap;
   onRightActionPress?: () => void;
 
-  // NEW
-  variant?: "plusminus" | "toggle";
+  onPress?: () => void; // NEW for link rows
+
+  variant?: "plusminus" | "toggle" | "link";
 };
 
 export default function Accordion({
@@ -23,27 +24,36 @@ export default function Accordion({
   children,
   rightActionIcon,
   onRightActionPress,
+  onPress,
   variant = "plusminus",
-  }: Props) {
+}: Props) {
+  const isLink = variant === "link";
 
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (defaultOpen) {
-      // open after first layout pass so Collapsible can measure content height
+    if (!isLink && defaultOpen) {
       requestAnimationFrame(() => setOpen(true));
     }
-  }, [defaultOpen]);
+  }, [defaultOpen, isLink]);
 
   const toggleOpen = () => {
-    if (alwaysOpen) return; 
+    if (alwaysOpen || isLink) return;
     setOpen((v) => !v);
-  };  const closed = !open;
+  };
+
+  const handleHeaderPress = () => {
+    if (isLink) {
+      onPress?.();
+      return;
+    }
+    toggleOpen();
+  };
 
   return (
     <View style={[styles.card, variant === "toggle" && styles.toggleCard]}>
       <Pressable
-        onPress={toggleOpen}
+        onPress={handleHeaderPress}
         style={({ pressed }) => [styles.header, pressed && { opacity: 0.9 }]}
       >
         <Text style={styles.title}>{title}</Text>
@@ -64,6 +74,12 @@ export default function Accordion({
               }
               ios_backgroundColor="rgba(233,244,255,0.22)"
             />
+          ) : isLink ? (
+            <Feather
+              name="chevron-right"
+              size={20}
+              color="rgba(233,244,255,0.95)"
+            />
           ) : rightActionIcon ? (
             <Pressable
               onPress={(e) => {
@@ -79,7 +95,7 @@ export default function Accordion({
                 color="rgba(233,244,255,0.95)"
               />
             </Pressable>
-          ) : !alwaysOpen ? (   // 👈 THIS is the key line
+          ) : !alwaysOpen ? (
             <Feather
               name={open ? "minus" : "plus"}
               size={18}
@@ -89,12 +105,15 @@ export default function Accordion({
         </View>
       </Pressable>
 
-      {alwaysOpen ? (
-        <View style={styles.content}>{children}</View>
-      ) : (
-        <Collapsible collapsed={!open} align="top">
+      {/* Only render content if children exist AND not a link */}
+      {!isLink && children != null && (
+        alwaysOpen ? (
           <View style={styles.content}>{children}</View>
-        </Collapsible>
+        ) : (
+          <Collapsible collapsed={!open} align="top">
+            <View style={styles.content}>{children}</View>
+          </Collapsible>
+        )
       )}
     </View>
   );
