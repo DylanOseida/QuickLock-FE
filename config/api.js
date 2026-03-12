@@ -41,6 +41,16 @@ export async function getAccessToken() {
   }
 }
 
+export async function removeTokens() {
+  if (Platform.OS === "web") {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+  } else {
+    await SecureStore.deleteItemAsync("accessToken");
+    await SecureStore.deleteItemAsync("refreshToken");
+  }
+}
+
 export async function getUserInfo() {
   const token = await getAccessToken(); // your existing helper
   if (!token) throw new Error("No access token available");
@@ -148,15 +158,17 @@ export async function loginUser({ username, password }) {
 
 export async function fetchLockStatus() {
   const lockId = await getStoredLockId();
-  if (!lockId) throw new Error("No lockId stored");
 
-  const res = await fetch(LOCK_STATUS_ENDPOINT(lockId), {
-    method: "GET",
-  });
+  if (!lockId) return null;
 
-  const data = await res.json();
+  const res = await fetch(LOCK_STATUS_ENDPOINT(lockId), { method: "GET" });
+  const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
+    // If user no longer has access, clear stale lockId
+    if (res.status === 401 || res.status === 403 || res.status === 404) {
+      await removeLockId();
+    }
     console.error("Failed to fetch lock status:", res.status, data);
     return null;
   }
@@ -169,7 +181,7 @@ export async function fetchLocks() {
   if (!token) throw new Error("No access token");
 
   try {
-    const res = await axios.get(`${BASE_URL}/access/Locks/`, {
+    const res = await axios.get(`${BASE_URL}/access/Locks/list_by_user_access/`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -187,6 +199,11 @@ export async function fetchLocks() {
 }
 
 export async function saveLockId(lockId) {
+  // Treat null/undefined/"" as "clear"
+  if (lockId === null || lockId === undefined || String(lockId).trim() === "") {
+    return removeLockId();
+  }
+
   const value = String(lockId);
 
   if (Platform.OS === "web") {
@@ -201,6 +218,14 @@ export async function getStoredLockId() {
     return localStorage.getItem("lockId");
   } else {
     return await SecureStore.getItemAsync("lockId");
+  }
+}
+
+export async function removeLockId() {
+  if (Platform.OS === "web") {
+    localStorage.removeItem("lockId");
+  } else {
+    await SecureStore.deleteItemAsync("lockId");
   }
 }
 
@@ -277,3 +302,5 @@ export async function generateKey(data) {
 
   return payload;
 }
+
+
