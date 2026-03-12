@@ -6,6 +6,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  Alert,
   Pressable,
   ScrollView,
   StatusBar,
@@ -83,17 +84,16 @@ export default function ShareAccess() {
   const handleAssignKey = async () => {
     try {
       if (!email.trim() || !keyName.trim()) {
-        console.warn("Missing email or key name");
+        Alert.alert("Missing info", "Please enter an email and a key name.");
         return;
       }
 
       if (selectedLocks.length === 0) {
-        console.warn("No lock selected");
+        Alert.alert("No lock selected", "Please select at least one lock.");
         return;
       }
 
       const lock_id = selectedLocks[0];
-
       const not_valid_before = dayjs(startValue).format("YYYY-MM-DD HH:mm:ss");
 
       const not_valid_after =
@@ -101,11 +101,8 @@ export default function ShareAccess() {
           ? dayjs(endValue).format("YYYY-MM-DD HH:mm:ss")
           : null;
 
-      if (
-        not_valid_after &&
-        dayjs(not_valid_after).isBefore(dayjs(not_valid_before))
-      ) {
-        console.warn("End date/time must be after start date/time");
+      if (not_valid_after && dayjs(not_valid_after).isBefore(dayjs(not_valid_before))) {
+        Alert.alert("Invalid time", "End date/time must be after start date/time.");
         return;
       }
 
@@ -121,13 +118,22 @@ export default function ShareAccess() {
       const res = await generateKey(payload);
       console.log("generateKey success:", res);
 
-      router.back();
-    } catch (err: any) {
+      Alert.alert("Success", "Key assigned successfully.", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (err) {
       console.error(
         "generateKey failed:",
         err?.status,
-        err?.payload || err?.message,
+        err?.payload || err?.message
       );
+
+      const msg =
+        (err?.payload && (err.payload.detail || JSON.stringify(err.payload))) ||
+        err?.message ||
+        "Failed to assign key. Please try again.";
+
+      Alert.alert("Error", msg);
     }
   };
 

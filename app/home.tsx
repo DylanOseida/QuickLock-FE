@@ -16,36 +16,64 @@ export default function Home() {
   const holdAnim = useRef(new Animated.Value(0)).current;
   const holdTimer = useRef<number | null>(null);
   const router = useRouter();
-  const [lockId, setLockId] = useState<string | null>(null);
+  // const [lockId, setLockId] = useState<string | null>(null);   might need this later
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [locks, setLocks] = useState<any[] | null>(null);
+
 
 
   useEffect(() => {
     let mounted = true;
 
     const start = async () => {
-      const id = await getStoredLockId(); // string | null
+      try {
+        // Clear any previous interval
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
 
-      if (!mounted) return;
+        // 🔹 Check if a lockId is stored (this tells us if user has access)
+        const id = await getStoredLockId();
+        console.log("HOME stored lockId:", id);   
 
-      if (!id) {
-        console.warn("No lockId stored. Did login save it?");
-        return;
+        if (!mounted) return;
+
+        if (!id) {
+          // No stored lock → user has no access
+          setLocks([]); // use empty array to show "No lock access"
+          return;
+        }
+
+        // User has access (we don't care about the full lock list anymore)
+        setLocks([id]); // just something non-empty
+
+        // 🔹 Fetch initial lock status
+        const status = await fetchLockStatus();
+        if (!mounted) return;
+
+        if (typeof status === "boolean") {
+          setLocks([1]); // any non-empty
+          setLocked(status);
+        } else {
+          // fetchLockStatus failed AND may have cleared lockId
+          const id2 = await getStoredLockId();
+          setLocks(id2 ? [1] : []); // if cleared -> show no access
+          return;
+        }
+
+        // 🔹 Start polling status
+        intervalRef.current = setInterval(async () => {
+          const s = await fetchLockStatus();
+          if (mounted && typeof s === "boolean") {
+            setLocked(s);
+          }
+        }, 3000);
+
+      } catch (e) {
+        console.error("Home start failed:", e);
+        if (mounted) setLocks([]);
       }
-
-      setLockId(id);
-
-      // initial fetch
-      const status = await fetchLockStatus(); // uses stored id
-      if (mounted && typeof status === "boolean") {
-        setLocked(status);
-      }
-
-      // poll
-      intervalRef.current = setInterval(async () => {
-        const s = await fetchLockStatus();
-        if (mounted && typeof s === "boolean") setLocked(s);
-      }, 1000);
     };
 
     start();
@@ -128,51 +156,53 @@ export default function Home() {
 
         {/* Card */}
         <View style={styles.cardWrap}>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Front Door</Text>
-            <Text style={styles.muted}>Battery Life: {battery}%</Text>
-
-            {/* Lock button */}
-            <View style={styles.lockButtonContainer}>
-              <Animated.View
-                style={[
-                  styles.ring,
-                  {
-                    borderWidth: ringBorderWidth,
-                    opacity: ringOpacity,
-                  },
-                ]}
-              />
-              <Pressable
-                onPressIn={onPressIn}
-                onPressOut={onPressOut}
-                android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: true }}
-                style={({ pressed }) => [
-                  styles.lockButton,
-                  pressed && { transform: [{ scale: 0.98 }] },
-                ]}
-              >
-                <Feather name={lockIcon} size={125} color="#e2e8f0" />
-              </Pressable>
+         <View style={styles.card}>
+          {locks === null ? (
+            // nothing (or a blank spacer) while we fetch
+            <View style={styles.emptyState} />
+          ) : locks.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>No lock access</Text>
+              <Text style={styles.emptySubtitle}>
+                You don’t have access to any locks right now. Ask an admin to add you to a lock.
+              </Text>
             </View>
+          ) : (
+            <>
+              <Text style={styles.cardTitle}>Front Door</Text>
+              <Text style={styles.muted}>Battery Life: {battery}%</Text>
 
-            {/* CTA & status */}
-            <Text style={styles.cta}>{ctaText}</Text>
-            <View style={styles.status}>
-              <Text style={styles.history}>{statusText}</Text>
-              <Text style={styles.time}>{timeText}</Text>
-            </View>
-
-            {/* Pager dots */}
-            <View style={styles.dotContainer}>
-              <View style={styles.dotsRow}>
-                <View style={[styles.dot, styles.dotActive]} />
-                <View style={styles.dot} />
-                <View style={styles.dot} />
+              <View style={styles.lockButtonContainer}>
+                <Animated.View
+                  style={[styles.ring, { borderWidth: ringBorderWidth, opacity: ringOpacity }]}
+                />
+                <Pressable
+                  onPressIn={onPressIn}
+                  onPressOut={onPressOut}
+                  android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: true }}
+                  style={({ pressed }) => [styles.lockButton, pressed && { transform: [{ scale: 0.98 }] }]}
+                >
+                  <Feather name={lockIcon} size={125} color="#e2e8f0" />
+                </Pressable>
               </View>
-            </View>
-          </View>
+
+              <Text style={styles.cta}>{ctaText}</Text>
+              <View style={styles.status}>
+                <Text style={styles.history}>{statusText}</Text>
+                <Text style={styles.time}>{timeText}</Text>
+              </View>
+
+              <View style={styles.dotContainer}>
+                <View style={styles.dotsRow}>
+                  <View style={[styles.dot, styles.dotActive]} />
+                  <View style={styles.dot} />
+                  <View style={styles.dot} />
+                </View>
+              </View>
+            </>
+          )}
         </View>
+      </View>
 
         {/* Bottom nav */}
         <BottomNav active="home"/>
@@ -224,6 +254,25 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.08)",
     borderColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
+  },
+  emptyState: {
+    flex: 1,
+    paddingHorizontal: "10%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyTitle: {
+    color: "#E9F4FF",
+    fontSize: 24,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    marginTop: 10,
+    color: "rgba(233,244,255,0.80)",
+    fontSize: 16,
+    textAlign: "center",
+    lineHeight: 22,
   },
   cardTitle: {
     color: "#E9F4FF",

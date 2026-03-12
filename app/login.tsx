@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import Colors from "../assets/styles/colors";
 import Variables from "../assets/styles/variables";
-import { fetchLocks, loginUser, saveLockId, saveTokens } from "../config/api";
+import { fetchLocks, getAccessToken, getStoredLockId, loginUser, removeLockId, removeTokens, saveLockId, saveTokens } from "../config/api";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -31,6 +31,8 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogIn = async () => {
+
+    console.log("LOGINSCREEN handleLogIn CALLED");
     const validationError = validate();
     if (validationError) {
       alert(validationError);
@@ -38,38 +40,33 @@ export default function LoginScreen() {
     }
 
     setLoading(true);
-    try {
-      // your backend expects { username, password } per working curl
-      const resp = await loginUser({ username: email, password });
-      console.log("login response:", resp);
+  try {
+    await removeLockId();
+    console.log("LOGIN after removeLockId lockId:", await getStoredLockId());
+    await removeTokens();
 
-      // Save tokens if present (function handles different shapes)
-      await saveTokens(resp);
+    const resp = await loginUser({ username: email, password });
+    await saveTokens(resp);
 
-      // Fetch locks for this user
-      const locks = await fetchLocks();
+    console.log("ACCESS TOKEN AFTER LOGIN:", await getAccessToken());
 
-      if (!Array.isArray(locks) || locks.length === 0) {
-        alert("No locks assigned to this account.");
-        return;
-      }
-
-      // For now, use the first lock
-      const firstLockId = locks[0].lock_id;
-
-      await saveLockId(firstLockId);
-
+    const locks = await fetchLocks();
+    
+    if (!Array.isArray(locks) || locks.length === 0) {
+      await removeLockId();
+      console.log("LOGIN no-locks lockId:", await getStoredLockId());
       router.replace("/home");
+      return;
+    }
 
-      // If your backend returns no tokens (session cookie approach), you may need to
-      // rely on cookie-based auth (not covered here) or change backend to return JWTs.
-      alert("Login successful");
+    await saveLockId(locks[0].lock_id);
+    router.replace("/home");
+  } catch (err) {
+    await removeLockId();
+    console.log("LOGIN after removeLockId lockId:", await getStoredLockId());
+    await removeTokens();
 
-      // Navigate to protected/home screen
-      router.replace("/home"); // change route as needed
-    } catch (err) {
       console.error("Login failed:", err.status, err.payload || err.message);
-      // show the most useful message available
       const msg =
         (err.payload && (err.payload.detail || JSON.stringify(err.payload))) ||
         err.message ||
@@ -147,11 +144,7 @@ export default function LoginScreen() {
           onPress={handleLogIn}
           disabled={loading}
         >
-          {loading ? (
-            <ActivityIndicator />
-          ) : (
-            <Text style={styles.loginText}>Login</Text>
-          )}
+          {loading ? <ActivityIndicator /> : <Text style={styles.loginText}>Login</Text>}
         </TouchableOpacity>
 
         <View style={styles.footer}>
@@ -161,10 +154,7 @@ export default function LoginScreen() {
 
           <View style={styles.signUpContainer}>
             <Text style={styles.questionText}>Don't have an account?</Text>
-            <TouchableOpacity
-              onPress={() => router.push("/sign-up")}
-              disabled={loading}
-            >
+            <TouchableOpacity onPress={() => router.push("/sign-up")} disabled={loading}>
               <Text style={{ ...Variables.underlinedText }}>Sign Up</Text>
             </TouchableOpacity>
           </View>
