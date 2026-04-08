@@ -2,10 +2,11 @@ import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../components/quicklock/bottom-nav";
-import { fetchLockStatus, getStoredLockId, getUserInfo, toggleLock } from '../config/api';
+import { fetchLocks, fetchLockStatus, getStoredLockId, getUserInfo, toggleLock } from '../config/api';
+
 
 
 const CARD_WIDTH = 0.86;
@@ -69,6 +70,7 @@ export default function Home() {
 
         // User has access (we don't care about the full lock list anymore)
         setLocks([id]); // just something non-empty
+        await checkForNewAccess();
 
         // 🔹 Fetch initial lock status
         const status = await refreshLockStatus();
@@ -170,6 +172,7 @@ export default function Home() {
   const handleUserDetails = async () => {
     try {
       const userDetails = await getUserInfo();
+      console.log("Last login:", userDetails.last_login);
       router.push({
         pathname: "/account",
         params: { userDetails: JSON.stringify(userDetails) },
@@ -178,6 +181,41 @@ export default function Home() {
       console.error("Error fetching user details:", error);
     }
   };
+
+  const checkForNewAccess = async () => {
+  try {
+    const userInfo = await getUserInfo();
+    const lastLogin = userInfo?.last_login;
+
+    if (!lastLogin) return;
+
+    const locks = await fetchLocks();
+
+    if (!Array.isArray(locks) || locks.length === 0) return;
+
+    const lastLoginTime = new Date(lastLogin).getTime();
+
+    const newLocks = locks.filter((lock) => {
+      if (!lock?.created_at) return false;
+
+      const createdTime = new Date(lock.created_at).getTime();
+      return createdTime > lastLoginTime;
+    });
+
+    if (newLocks.length > 0) {
+      const names = newLocks
+        .map((l) => l.name || `Lock #${l.lock_id}`)
+        .join(", ");
+
+      Alert.alert(
+        "New Access Granted",
+        `You now have access to: ${names}`
+      );
+    }
+  } catch (err) {
+    console.error("checkForNewAccess error:", err);
+  }
+};
 
 
   return (

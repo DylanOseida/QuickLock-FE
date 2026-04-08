@@ -6,10 +6,8 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-nativ
 import Colors from '../assets/styles/colors';
 import Variables from '../assets/styles/variables';
 
-export default function LoginScreen() {
-
+export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const router = useRouter();
   
 
@@ -22,23 +20,23 @@ export default function LoginScreen() {
         style={StyleSheet.absoluteFillObject}   
       />
 
-      {/* Create Account */}
+      {/* Header */}
 
       <View style={styles.header}>
         <Text style={styles.title}>Forgot Password?</Text>
         <Text style={styles.subtitle}>Enter your email for a link to {"\n"} reset your password.</Text>
       </View>
 
-      {/* Create Email & Password */}
+      {/* Email input */}
 
       <View style={styles.form}>
-        <View style ={styles.inputStyle}>
+        <View style ={styles.inputContainer}>
           <MaterialIcons style={styles.icon}  name="email" size={24}/>
           <TextInput style={styles.input} placeholder="Email Address" placeholderTextColor={Colors.placeholder} value={email} keyboardType="email-address" onChangeText={setEmail} autoCapitalize="none" />
         </View>
       </View>
 
-      {/* Buttons */}
+      {/* Actions */}
 
       <TouchableOpacity style={styles.signUpButton} onPress={() => router.push('/forgot-pass')}>
         <Text style={styles.signUpText}>Submit</Text>
@@ -51,7 +49,7 @@ export default function LoginScreen() {
           <View style={styles.line} />
         </View>
 
-        <View style={styles.loginContainer}>
+        <View style={styles.authLinkRow}>
           <TouchableOpacity onPress={() => router.push('/login')}>
             <Text style={{...Variables.underlinedText}}>Back to Login</Text>
           </TouchableOpacity>
@@ -90,7 +88,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 20,
   },
-  inputStyle:{
+  inputContainer:{
     ...Variables.inputStyle,
     backgroundColor: Colors.text_input,
   },
@@ -127,10 +125,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     width: '100%',
   },
-  loginContainer:{
+  authLinkRow:{
     ...Variables.linkContainer,
-  },
-    questionText:{
-    color: 'white',
   },
 });
