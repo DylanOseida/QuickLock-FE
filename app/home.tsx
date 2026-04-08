@@ -11,6 +11,7 @@ import { fetchLocks, fetchLockStatus, getStoredLockId, getUserInfo, toggleLock }
 
 const CARD_WIDTH = 0.86;
 const STATUS_RETRY_DELAY_MS = 500;
+const STATUS_RETRY_LIMIT = 8;
 
 export default function Home() {
   const [locked, setLocked] = useState(false);
@@ -24,7 +25,18 @@ export default function Home() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [locks, setLocks] = useState<any[] | null>(null);
 
+  const refreshLockStatus = async () => {
+    const status = await fetchLockStatus();
 
+    if (typeof status === "boolean") {
+      setLocked(status);
+      return status;
+    }
+
+    const id = await getStoredLockId();
+    setLocks(id ? [id] : []);
+    return null;
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -112,33 +124,55 @@ export default function Home() {
   const timeText = "Today at 10:28 AM";
 
   const wait = (ms: number) =>
-    new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+  const waitForLockStatusChange = async (previousStatus: boolean) => {
+    for (let attempt = 0; attempt < STATUS_RETRY_LIMIT; attempt += 1) {
+      await wait(STATUS_RETRY_DELAY_MS);
+
+      const refreshedStatus = await refreshLockStatus();
+
+      if (
+        typeof refreshedStatus === "boolean" &&
+        refreshedStatus !== previousStatus
+      ) {
+        return refreshedStatus;
+      }
+    }
+
+    return null;
+  };
 
   const onPressIn = () => {
-    Animated.timing(holdAnim, { toValue: 1, duration: 1000, useNativeDriver: false }).start();
+    Animated.timing(holdAnim, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: false,
+    }).start();
 
     holdTimer.current = setTimeout(() => {
       (async () => {
         try {
           setIsUpdatingStatus(true);
 
-          const newStatus = await toggleLock(); // uses stored lockId
-          if (typeof newStatus === "boolean") {
-            let latestStatus = newStatus;
+          const previousStatus = locked;
 
-            for (let attempt = 0; attempt < 5; attempt += 1) {
-              await wait(STATUS_RETRY_DELAY_MS);
-              const refreshedStatus = await fetchLockStatus();
-              if (typeof refreshedStatus === "boolean") {
-                latestStatus = refreshedStatus;
-                break;
-              }
+          await toggleLock();
+
+          const confirmedStatus = await waitForLockStatusChange(previousStatus);
+
+          if (typeof confirmedStatus === "boolean") {
+            setLocked(confirmedStatus);
+          } else {
+            const fallbackStatus = await refreshLockStatus();
+            if (typeof fallbackStatus === "boolean") {
+              setLocked(fallbackStatus);
             }
-
-            setLocked(latestStatus);
           }
+        } catch (error) {
+          console.error("Error updating lock status:", error);
         } finally {
           setIsUpdatingStatus(false);
         }
@@ -150,9 +184,21 @@ export default function Home() {
       }
 
       Animated.sequence([
-        Animated.timing(holdAnim, { toValue: 0, duration: 0, useNativeDriver: false }),
-        Animated.timing(holdAnim, { toValue: 1, duration: 200, useNativeDriver: false }),
-        Animated.timing(holdAnim, { toValue: 0, duration: 300, useNativeDriver: false }),
+        Animated.timing(holdAnim, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: false,
+        }),
+        Animated.timing(holdAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: false,
+        }),
+        Animated.timing(holdAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: false,
+        }),
       ]).start();
     }, 1000);
   };
@@ -168,7 +214,6 @@ export default function Home() {
   const ringBorderWidth = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [2, 10] });
   const ringOpacity = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.7] });
 
-
   const handleUserDetails = async () => {
     try {
       const userDetails = await getUserInfo();
@@ -183,39 +228,39 @@ export default function Home() {
   };
 
   const checkForNewAccess = async () => {
-  try {
-    const userInfo = await getUserInfo();
-    const lastLogin = userInfo?.last_login;
+    try {
+      const userInfo = await getUserInfo();
+      const lastLogin = userInfo?.last_login;
 
-    if (!lastLogin) return;
+      if (!lastLogin) return;
 
-    const locks = await fetchLocks();
+      const locks = await fetchLocks();
 
-    if (!Array.isArray(locks) || locks.length === 0) return;
+      if (!Array.isArray(locks) || locks.length === 0) return;
 
-    const lastLoginTime = new Date(lastLogin).getTime();
+      const lastLoginTime = new Date(lastLogin).getTime();
 
-    const newLocks = locks.filter((lock) => {
-      if (!lock?.created_at) return false;
+      const newLocks = locks.filter((lock) => {
+        if (!lock?.created_at) return false;
 
-      const createdTime = new Date(lock.created_at).getTime();
-      return createdTime > lastLoginTime;
-    });
+        const createdTime = new Date(lock.created_at).getTime();
+        return createdTime > lastLoginTime;
+      });
 
-    if (newLocks.length > 0) {
-      const names = newLocks
-        .map((l) => l.name || `Lock #${l.lock_id}`)
-        .join(", ");
+      if (newLocks.length > 0) {
+        const names = newLocks
+          .map((l) => l.name || `Lock #${l.lock_id}`)
+          .join(", ");
 
-      Alert.alert(
-        "New Access Granted",
-        `You now have access to: ${names}`
-      );
+        Alert.alert(
+          "New Access Granted",
+          `You now have access to: ${names}`
+        );
+      }
+    } catch (err) {
+      console.error("checkForNewAccess error:", err);
     }
-  } catch (err) {
-    console.error("checkForNewAccess error:", err);
-  }
-};
+  };
 
 
   return (
@@ -234,12 +279,10 @@ export default function Home() {
         {/* Card */}
         <View style={styles.cardWrap}>
          <View style={styles.card}>
-          {isLoadingStatus || isUpdatingStatus ? (
+          {isLoadingStatus ? (
             <View style={styles.loadingState}>
               <ActivityIndicator size="large" color="#E9F4FF" />
-              <Text style={styles.loadingTitle}>
-                {isUpdatingStatus ? "Updating lock status..." : "Loading lock status..."}
-              </Text>
+              <Text style={styles.loadingTitle}>Loading lock status...</Text>
             </View>
           ) : !locks || locks.length === 0 ? (
             <View style={styles.emptyState}>
@@ -257,18 +300,31 @@ export default function Home() {
                 <Animated.View
                   style={[styles.ring, { borderWidth: ringBorderWidth, opacity: ringOpacity }]}
                 />
-                <Pressable
-                  disabled={isUpdatingStatus}
-                  onPressIn={onPressIn}
-                  onPressOut={onPressOut}
-                  android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: true }}
-                  style={({ pressed }) => [styles.lockButton, pressed && { transform: [{ scale: 0.98 }] }]}
-                >
-                  <Feather name={lockIcon} size={125} color="#e2e8f0" />
-                </Pressable>
+
+                {isUpdatingStatus ? (
+                  <View style={styles.lockButton}>
+                    <ActivityIndicator size="large" color="#E9F4FF" />
+                  </View>
+                ) : (
+                  <Pressable
+                    disabled={isUpdatingStatus}
+                    onPressIn={onPressIn}
+                    onPressOut={onPressOut}
+                    android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: true }}
+                    style={({ pressed }) => [
+                      styles.lockButton,
+                      pressed && { transform: [{ scale: 0.98 }] },
+                    ]}
+                  >
+                    <Feather name={lockIcon} size={125} color="#e2e8f0" />
+                  </Pressable>
+                )}
               </View>
 
-              <Text style={styles.cta}>{ctaText}</Text>
+              <Text style={styles.cta}>
+                {isUpdatingStatus ? "Updating lock status..." : ctaText}
+              </Text>
+
               <View style={styles.status}>
                 <Text style={styles.history}>{statusText}</Text>
                 <Text style={styles.time}>{timeText}</Text>
