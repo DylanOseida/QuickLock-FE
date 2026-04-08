@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
+import { Alert, Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../components/quicklock/bottom-nav";
 import { fetchLocks, fetchLockStatus, getStoredLockId, getUserInfo, toggleLock } from '../config/api';
@@ -10,14 +10,10 @@ import { fetchLocks, fetchLockStatus, getStoredLockId, getUserInfo, toggleLock }
 
 
 const CARD_WIDTH = 0.86;
-const STATUS_RETRY_DELAY_MS = 500;
-const STATUS_RETRY_LIMIT = 8;
 
 export default function Home() {
   const [locked, setLocked] = useState(false);
   const [battery] = useState(79);
-  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const holdAnim = useRef(new Animated.Value(0)).current;
   const holdTimer = useRef<number | null>(null);
   const router = useRouter();
@@ -25,43 +21,13 @@ export default function Home() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [locks, setLocks] = useState<any[] | null>(null);
 
-  const refreshLockStatus = async () => {
-    const status = await fetchLockStatus();
 
-    if (typeof status === "boolean") {
-      setLocked(status);
-      return status;
-    }
-
-    const id = await getStoredLockId();
-    setLocks(id ? [id] : []);
-    return null;
-  };
 
   useEffect(() => {
     let mounted = true;
 
-    const refreshLockStatus = async () => {
-      const status = await fetchLockStatus();
-      if (!mounted) return null;
-
-      if (typeof status === "boolean") {
-        setLocks([1]);
-        setLocked(status);
-        return status;
-      }
-
-      const id = await getStoredLockId();
-      if (!mounted) return null;
-
-      setLocks(id ? [1] : []);
-      return null;
-    };
-
-    const getLocks = async () => {
+    const start = async () => {
       try {
-        setIsLoadingStatus(true);
-
         // Clear any previous interval
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
@@ -85,29 +51,34 @@ export default function Home() {
         await checkForNewAccess();
 
         // 🔹 Fetch initial lock status
-        const status = await refreshLockStatus();
+        const status = await fetchLockStatus();
         if (!mounted) return;
 
-        if (typeof status !== "boolean") {
+        if (typeof status === "boolean") {
+          setLocks([1]); // any non-empty
+          setLocked(status);
+        } else {
+          // fetchLockStatus failed AND may have cleared lockId
+          const id2 = await getStoredLockId();
+          setLocks(id2 ? [1] : []); // if cleared -> show no access
           return;
         }
 
         // 🔹 Start polling status
         intervalRef.current = setInterval(async () => {
-          await refreshLockStatus();
+          const s = await fetchLockStatus();
+          if (mounted && typeof s === "boolean") {
+            setLocked(s);
+          }
         }, 3000);
 
       } catch (e) {
         console.error("Home start failed:", e);
         if (mounted) setLocks([]);
-      } finally {
-        if (mounted) {
-          setIsLoadingStatus(false);
-        }
       }
     };
 
-    getLocks();
+    start();
 
     return () => {
       mounted = false;
@@ -123,58 +94,14 @@ export default function Home() {
   const statusText = locked ? "Locked by John Doe" : "Unlocked by John Doe";
   const timeText = "Today at 10:28 AM";
 
-  const wait = (ms: number) =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-
-  const waitForLockStatusChange = async (previousStatus: boolean) => {
-    for (let attempt = 0; attempt < STATUS_RETRY_LIMIT; attempt += 1) {
-      await wait(STATUS_RETRY_DELAY_MS);
-
-      const refreshedStatus = await refreshLockStatus();
-
-      if (
-        typeof refreshedStatus === "boolean" &&
-        refreshedStatus !== previousStatus
-      ) {
-        return refreshedStatus;
-      }
-    }
-
-    return null;
-  };
-
   const onPressIn = () => {
-    Animated.timing(holdAnim, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: false,
-    }).start();
+    Animated.timing(holdAnim, { toValue: 1, duration: 1000, useNativeDriver: false }).start();
 
     holdTimer.current = setTimeout(() => {
       (async () => {
-        try {
-          setIsUpdatingStatus(true);
-
-          const previousStatus = locked;
-
-          await toggleLock();
-
-          const confirmedStatus = await waitForLockStatusChange(previousStatus);
-
-          if (typeof confirmedStatus === "boolean") {
-            setLocked(confirmedStatus);
-          } else {
-            const fallbackStatus = await refreshLockStatus();
-            if (typeof fallbackStatus === "boolean") {
-              setLocked(fallbackStatus);
-            }
-          }
-        } catch (error) {
-          console.error("Error updating lock status:", error);
-        } finally {
-          setIsUpdatingStatus(false);
+        const newStatus = await toggleLock(); // uses stored lockId
+        if (typeof newStatus === "boolean") {
+          setLocked(newStatus);
         }
       })();
 
@@ -184,21 +111,9 @@ export default function Home() {
       }
 
       Animated.sequence([
-        Animated.timing(holdAnim, {
-          toValue: 0,
-          duration: 0,
-          useNativeDriver: false,
-        }),
-        Animated.timing(holdAnim, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: false,
-        }),
-        Animated.timing(holdAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: false,
-        }),
+        Animated.timing(holdAnim, { toValue: 0, duration: 0, useNativeDriver: false }),
+        Animated.timing(holdAnim, { toValue: 1, duration: 200, useNativeDriver: false }),
+        Animated.timing(holdAnim, { toValue: 0, duration: 300, useNativeDriver: false }),
       ]).start();
     }, 1000);
   };
@@ -214,6 +129,7 @@ export default function Home() {
   const ringBorderWidth = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [2, 10] });
   const ringOpacity = holdAnim.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.7] });
 
+
   const handleUserDetails = async () => {
     try {
       const userDetails = await getUserInfo();
@@ -228,39 +144,39 @@ export default function Home() {
   };
 
   const checkForNewAccess = async () => {
-    try {
-      const userInfo = await getUserInfo();
-      const lastLogin = userInfo?.last_login;
+  try {
+    const userInfo = await getUserInfo();
+    const lastLogin = userInfo?.last_login;
 
-      if (!lastLogin) return;
+    if (!lastLogin) return;
 
-      const locks = await fetchLocks();
+    const locks = await fetchLocks();
 
-      if (!Array.isArray(locks) || locks.length === 0) return;
+    if (!Array.isArray(locks) || locks.length === 0) return;
 
-      const lastLoginTime = new Date(lastLogin).getTime();
+    const lastLoginTime = new Date(lastLogin).getTime();
 
-      const newLocks = locks.filter((lock) => {
-        if (!lock?.created_at) return false;
+    const newLocks = locks.filter((lock) => {
+      if (!lock?.created_at) return false;
 
-        const createdTime = new Date(lock.created_at).getTime();
-        return createdTime > lastLoginTime;
-      });
+      const createdTime = new Date(lock.created_at).getTime();
+      return createdTime > lastLoginTime;
+    });
 
-      if (newLocks.length > 0) {
-        const names = newLocks
-          .map((l) => l.name || `Lock #${l.lock_id}`)
-          .join(", ");
+    if (newLocks.length > 0) {
+      const names = newLocks
+        .map((l) => l.name || `Lock #${l.lock_id}`)
+        .join(", ");
 
-        Alert.alert(
-          "New Access Granted",
-          `You now have access to: ${names}`
-        );
-      }
-    } catch (err) {
-      console.error("checkForNewAccess error:", err);
+      Alert.alert(
+        "New Access Granted",
+        `You now have access to: ${names}`
+      );
     }
-  };
+  } catch (err) {
+    console.error("checkForNewAccess error:", err);
+  }
+};
 
 
   return (
@@ -279,12 +195,10 @@ export default function Home() {
         {/* Card */}
         <View style={styles.cardWrap}>
          <View style={styles.card}>
-          {isLoadingStatus ? (
-            <View style={styles.loadingState}>
-              <ActivityIndicator size="large" color="#E9F4FF" />
-              <Text style={styles.loadingTitle}>Loading lock status...</Text>
-            </View>
-          ) : !locks || locks.length === 0 ? (
+          {locks === null ? (
+            // nothing (or a blank spacer) while we fetch
+            <View style={styles.emptyState} />
+          ) : locks.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>No lock access</Text>
               <Text style={styles.emptySubtitle}>
@@ -300,31 +214,17 @@ export default function Home() {
                 <Animated.View
                   style={[styles.ring, { borderWidth: ringBorderWidth, opacity: ringOpacity }]}
                 />
-
-                {isUpdatingStatus ? (
-                  <View style={styles.lockButton}>
-                    <ActivityIndicator size="large" color="#E9F4FF" />
-                  </View>
-                ) : (
-                  <Pressable
-                    disabled={isUpdatingStatus}
-                    onPressIn={onPressIn}
-                    onPressOut={onPressOut}
-                    android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: true }}
-                    style={({ pressed }) => [
-                      styles.lockButton,
-                      pressed && { transform: [{ scale: 0.98 }] },
-                    ]}
-                  >
-                    <Feather name={lockIcon} size={125} color="#e2e8f0" />
-                  </Pressable>
-                )}
+                <Pressable
+                  onPressIn={onPressIn}
+                  onPressOut={onPressOut}
+                  android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: true }}
+                  style={({ pressed }) => [styles.lockButton, pressed && { transform: [{ scale: 0.98 }] }]}
+                >
+                  <Feather name={lockIcon} size={125} color="#e2e8f0" />
+                </Pressable>
               </View>
 
-              <Text style={styles.cta}>
-                {isUpdatingStatus ? "Updating lock status..." : ctaText}
-              </Text>
-
+              <Text style={styles.cta}>{ctaText}</Text>
               <View style={styles.status}>
                 <Text style={styles.history}>{statusText}</Text>
                 <Text style={styles.time}>{timeText}</Text>
@@ -398,26 +298,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: "10%",
     alignItems: "center",
     justifyContent: "center",
-  },
-  loadingState: {
-    flex: 1,
-    paddingHorizontal: "10%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadingTitle: {
-    marginTop: 20,
-    color: "#E9F4FF",
-    fontSize: 22,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  loadingSubtitle: {
-    marginTop: 10,
-    color: "rgba(233,244,255,0.80)",
-    fontSize: 16,
-    textAlign: "center",
-    lineHeight: 22,
   },
   emptyTitle: {
     color: "#E9F4FF",
