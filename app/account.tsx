@@ -6,6 +6,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Pressable,
   StatusBar,
   StyleSheet,
@@ -17,6 +18,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Colors from "../assets/styles/colors";
 import Variables from "../assets/styles/variables";
+import { logoutUser } from "../config/api";
 
 const CARD_WIDTH = 0.86;
 
@@ -31,6 +33,17 @@ export default function Account() {
   const [userDetails, setUserDetails] = useState(() => {
     return params.userDetails ? JSON.parse(params.userDetails as string) : {};
   });
+
+  const handleLogout = async () => {
+    setLoading(true);
+
+    try {
+      await logoutUser();
+      router.replace("/");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <LinearGradient
@@ -123,8 +136,12 @@ export default function Account() {
         
       {/* Footer */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.signUpButton} onPress={() => router.push('/')}>
-          <Text style={styles.signUpText}>Log Out</Text>
+        <TouchableOpacity
+          style={styles.signUpButton}
+          onPress={handleLogout}
+          disabled={loading}
+        >
+          {loading ? <ActivityIndicator color={Colors.white} /> : <Text style={styles.signUpText}>Log Out</Text>}
         </TouchableOpacity>
       </View>
 

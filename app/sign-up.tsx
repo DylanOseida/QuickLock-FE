@@ -35,7 +35,7 @@ export default function SignUpScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const validate = () => {
+  const validateRegistrationForm = () => {
     if (!username) return "Please enter a username.";
     if (!email) return "Please enter an email.";
     if (!password) return "Please enter a password.";
@@ -45,9 +45,9 @@ export default function SignUpScreen() {
   };
 
   const handleSignUp = async () => {
-    const error = validate();
-    if (error) {
-      alert(error);
+    const validationError = validateRegistrationForm();
+    if (validationError) {
+      alert(validationError);
       return;
     }
 
@@ -59,8 +59,7 @@ export default function SignUpScreen() {
       await removeTokens();
       console.log("SIGNUP after clears lockId:", await getStoredLockId());
 
-      // 1) Register
-      const userData = {
+      const registrationPayload = {
         username,
         email,
         password,
@@ -68,22 +67,21 @@ export default function SignUpScreen() {
       };
 
       console.log("SIGNUP attempting registration...");
-      const registerResp = await registerUser(userData);
-      console.log("SIGNUP Registered:", registerResp);
+      const registrationResponse = await registerUser(registrationPayload);
+      console.log("SIGNUP Registered:", registrationResponse);
 
-      // 2) Auto-login (your backend expects username/password)
+      // Preserve the current flow that logs the user in immediately after sign-up.
       console.log("SIGNUP attempting login...");
-      const tokens = await loginUser({ username, password });
-      console.log("SIGNUP login response:", tokens);
-      await saveTokens(tokens);
+      const authTokens = await loginUser({ username, password });
+      console.log("SIGNUP login response:", authTokens);
+      await saveTokens(authTokens);
 
       console.log("SIGNUP access token after login:", await getAccessToken());
 
-      // 3) Fetch lock access for THIS user
-      const locks = await fetchLocks();
-      console.log("SIGNUP fetchLocks result:", locks);
+      const availableLocks = await fetchLocks();
+      console.log("SIGNUP fetchLocks result:", availableLocks);
 
-      if (!Array.isArray(locks) || locks.length === 0) {
+      if (!Array.isArray(availableLocks) || availableLocks.length === 0) {
         // No access → keep lockId cleared so Home shows "No lock access"
         await removeLockId();
         console.log("SIGNUP no-locks lockId:", await getStoredLockId());
@@ -91,11 +89,10 @@ export default function SignUpScreen() {
         return;
       }
 
-      // 4) Save first lock (you only have one lock)
-      await saveLockId(locks[0].lock_id);
+      // Preserve the current behavior of storing the first available lock.
+      await saveLockId(availableLocks[0].lock_id);
       console.log("SIGNUP saved lockId:", await getStoredLockId());
 
-      // 5) Go Home
       router.replace("/home");
     } catch (err) {
       // If anything fails, make sure we don’t leave stale auth/lockId around
@@ -103,11 +100,11 @@ export default function SignUpScreen() {
       await removeTokens();
 
       console.error("Sign-up failed:", err.status, err.payload || err.message);
-      const msg =
+      const errorMessage =
         (err.payload && (err.payload.detail || JSON.stringify(err.payload))) ||
         err.message ||
         "Sign-up failed.";
-      alert(msg);
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -126,7 +123,7 @@ export default function SignUpScreen() {
       </View>
 
       <View style={styles.form}>
-        <View style={styles.inputStyle}>
+        <View style={styles.inputContainer}>
           <FontAwesome
             style={[styles.icon, { padding: 2 }]}
             name="user"
@@ -144,7 +141,7 @@ export default function SignUpScreen() {
           />
         </View>
 
-        <View style={styles.inputStyle}>
+        <View style={styles.inputContainer}>
           <MaterialIcons style={styles.icon} name="email" size={24} />
           <TextInput
             style={styles.input}
@@ -158,7 +155,7 @@ export default function SignUpScreen() {
           />
         </View>
 
-        <View style={styles.inputStyle}>
+        <View style={styles.inputContainer}>
           <MaterialCommunityIcons style={styles.icon} name="lock" size={24} />
           <TextInput
             style={styles.input}
@@ -172,7 +169,7 @@ export default function SignUpScreen() {
           />
         </View>
 
-        <View style={styles.inputStyle}>
+        <View style={styles.inputContainer}>
           <MaterialCommunityIcons style={styles.icon} name="lock" size={24} />
           <TextInput
             style={styles.input}
@@ -200,8 +197,8 @@ export default function SignUpScreen() {
           <View style={styles.line} />
         </View>
 
-        <View style={styles.loginContainer}>
-          <Text style={styles.questionText}>Already have an account?</Text>
+        <View style={styles.authLinkRow}>
+          <Text style={styles.authPromptText}>Already have an account?</Text>
           <TouchableOpacity onPress={() => router.push("/login")} disabled={loading}>
             <Text style={{ ...Variables.underlinedText }}>Login</Text>
           </TouchableOpacity>
@@ -217,7 +214,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 40, fontWeight: "bold", color: "white", marginBottom: 10 },
   subtitle: { fontSize: 18, color: "white", textAlign: "center" },
   form: { alignItems: "center", justifyContent: "center", gap: 20 },
-  inputStyle: { ...Variables.inputStyle, backgroundColor: Colors.text_input },
+  inputContainer: { ...Variables.inputStyle, backgroundColor: Colors.text_input },
   icon: { marginLeft: 5, marginRight: 5, color: Colors.white },
   input: { ...Variables.input },
   signUpButton: { ...Variables.buttons, marginTop: "20%", backgroundColor: "#FFFFFF" },
@@ -225,6 +222,6 @@ const styles = StyleSheet.create({
   footer: { ...Variables.footer },
   lineContainer: { width: Variables.buttons.width, alignItems: "center" },
   line: { height: 1, backgroundColor: "white", width: "100%" },
-  loginContainer: { ...Variables.linkContainer },
-  questionText: { color: "white" },
+  authLinkRow: { ...Variables.linkContainer },
+  authPromptText: { color: "white" },
 });
