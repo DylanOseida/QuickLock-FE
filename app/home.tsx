@@ -2,17 +2,20 @@ import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../components/quicklock/bottom-nav";
 import { fetchLockStatus, getStoredLockId, getUserInfo, toggleLock } from '../config/api';
 
 
 const CARD_WIDTH = 0.86;
+const STATUS_RETRY_DELAY_MS = 500;
 
 export default function Home() {
   const [locked, setLocked] = useState(false);
   const [battery] = useState(79);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const holdAnim = useRef(new Animated.Value(0)).current;
   const holdTimer = useRef<number | null>(null);
   const router = useRouter();
@@ -25,8 +28,27 @@ export default function Home() {
   useEffect(() => {
     let mounted = true;
 
-    const start = async () => {
+    const refreshLockStatus = async () => {
+      const status = await fetchLockStatus();
+      if (!mounted) return null;
+
+      if (typeof status === "boolean") {
+        setLocks([1]);
+        setLocked(status);
+        return status;
+      }
+
+      const id = await getStoredLockId();
+      if (!mounted) return null;
+
+      setLocks(id ? [1] : []);
+      return null;
+    };
+
+    const getLocks = async () => {
       try {
+        setIsLoadingStatus(true);
+
         // Clear any previous interval
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
@@ -49,34 +71,29 @@ export default function Home() {
         setLocks([id]); // just something non-empty
 
         // 🔹 Fetch initial lock status
-        const status = await fetchLockStatus();
+        const status = await refreshLockStatus();
         if (!mounted) return;
 
-        if (typeof status === "boolean") {
-          setLocks([1]); // any non-empty
-          setLocked(status);
-        } else {
-          // fetchLockStatus failed AND may have cleared lockId
-          const id2 = await getStoredLockId();
-          setLocks(id2 ? [1] : []); // if cleared -> show no access
+        if (typeof status !== "boolean") {
           return;
         }
 
         // 🔹 Start polling status
         intervalRef.current = setInterval(async () => {
-          const s = await fetchLockStatus();
-          if (mounted && typeof s === "boolean") {
-            setLocked(s);
-          }
+          await refreshLockStatus();
         }, 3000);
 
       } catch (e) {
         console.error("Home start failed:", e);
         if (mounted) setLocks([]);
+      } finally {
+        if (mounted) {
+          setIsLoadingStatus(false);
+        }
       }
     };
 
-    start();
+    getLocks();
 
     return () => {
       mounted = false;
@@ -92,14 +109,36 @@ export default function Home() {
   const statusText = locked ? "Locked by John Doe" : "Unlocked by John Doe";
   const timeText = "Today at 10:28 AM";
 
+  const wait = (ms: number) =>
+    new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+
   const onPressIn = () => {
     Animated.timing(holdAnim, { toValue: 1, duration: 1000, useNativeDriver: false }).start();
 
     holdTimer.current = setTimeout(() => {
       (async () => {
-        const newStatus = await toggleLock(); // uses stored lockId
-        if (typeof newStatus === "boolean") {
-          setLocked(newStatus);
+        try {
+          setIsUpdatingStatus(true);
+
+          const newStatus = await toggleLock(); // uses stored lockId
+          if (typeof newStatus === "boolean") {
+            let latestStatus = newStatus;
+
+            for (let attempt = 0; attempt < 5; attempt += 1) {
+              await wait(STATUS_RETRY_DELAY_MS);
+              const refreshedStatus = await fetchLockStatus();
+              if (typeof refreshedStatus === "boolean") {
+                latestStatus = refreshedStatus;
+                break;
+              }
+            }
+
+            setLocked(latestStatus);
+          }
+        } finally {
+          setIsUpdatingStatus(false);
         }
       })();
 
@@ -157,10 +196,14 @@ export default function Home() {
         {/* Card */}
         <View style={styles.cardWrap}>
          <View style={styles.card}>
-          {locks === null ? (
-            // nothing (or a blank spacer) while we fetch
-            <View style={styles.emptyState} />
-          ) : locks.length === 0 ? (
+          {isLoadingStatus || isUpdatingStatus ? (
+            <View style={styles.loadingState}>
+              <ActivityIndicator size="large" color="#E9F4FF" />
+              <Text style={styles.loadingTitle}>
+                {isUpdatingStatus ? "Updating lock status..." : "Loading lock status..."}
+              </Text>
+            </View>
+          ) : !locks || locks.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>No lock access</Text>
               <Text style={styles.emptySubtitle}>
@@ -177,6 +220,7 @@ export default function Home() {
                   style={[styles.ring, { borderWidth: ringBorderWidth, opacity: ringOpacity }]}
                 />
                 <Pressable
+                  disabled={isUpdatingStatus}
                   onPressIn={onPressIn}
                   onPressOut={onPressOut}
                   android_ripple={{ color: "rgba(255,255,255,0.1)", borderless: true }}
@@ -260,6 +304,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: "10%",
     alignItems: "center",
     justifyContent: "center",
+  },
+  loadingState: {
+    flex: 1,
+    paddingHorizontal: "10%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingTitle: {
+    marginTop: 20,
+    color: "#E9F4FF",
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  loadingSubtitle: {
+    marginTop: 10,
+    color: "rgba(233,244,255,0.80)",
+    fontSize: 16,
+    textAlign: "center",
+    lineHeight: 22,
   },
   emptyTitle: {
     color: "#E9F4FF",

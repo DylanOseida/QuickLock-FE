@@ -1,5 +1,8 @@
 import { Feather } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -15,16 +18,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../components/quicklock/bottom-nav";
 import { fetchActivityLogs, getUserInfo } from "../config/api";
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 type ActivityLogRecord = {
   attempt_id: number;
-  attempted_at: string;
-  key: number | null;
-  lock: number;
-  permission: string;
   presented_credential: string | null;
   reason: string | null;
+  attempted_at: string;
+  permission: string;
   result: boolean;
   user: number | null;
+  lock: number;
+  key: number | null;
 };
 
 const PACIFIC_TIME_ZONE = "America/Los_Angeles";
@@ -44,6 +50,7 @@ export default function ActivityLog() {
         setError(null);
 
         const data = await fetchActivityLogs();
+
         const sortedLogs = [...data].sort((a, b) => {
           const aTime = new Date(a.attempted_at).getTime();
           const bTime = new Date(b.attempted_at).getTime();
@@ -86,34 +93,35 @@ export default function ActivityLog() {
     }
   };
 
-  const formatDate = (value: string) => {
-    const date = new Date(value);
+  const getFormattedTimestamp = (value: string) => {
+  if (!value) {
+    return {
+      date: "Unknown date",
+      time: "",
+    };
+  }
 
-    if (Number.isNaN(date.getTime())) {
-      return "Unknown date";
+  const parsed = dayjs.utc(value).tz(PACIFIC_TIME_ZONE);
+
+    if (!parsed.isValid()) {
+      return {
+        date: "Unknown date",
+        time: "",
+      };
     }
 
-    return date.toLocaleDateString("en-US", {
-      timeZone: PACIFIC_TIME_ZONE,
-    });
-  };
-
-  const formatTime = (value: string) => {
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-      return "";
-    }
-
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: PACIFIC_TIME_ZONE,
-    });
+    return {
+      date: parsed.format("M/D/YYYY"),
+      time: parsed.format("h:mm A"),
+    };
   };
 
   const getAttemptSource = (log: ActivityLogRecord) => {
-    return log.presented_credential ? "Card" : "App";
+    return log.presented_credential ? "credit-card" : "mobile";
+  };
+
+  const getUserID = (log: ActivityLogRecord) => {
+    return log.user !== null ? `User #${log.user}` : "Unknown user";
   };
 
   const isFailedAttempt = (log: ActivityLogRecord) => {
@@ -131,13 +139,14 @@ export default function ActivityLog() {
   };
 
   const getLogTitle = (log: ActivityLogRecord) => {
-    const source = getAttemptSource(log);
+    
+    const userID = getUserID(log);
 
     if (isFailedAttempt(log)) {
-      return `Failed by ${source}`;
+      return `${userID} attempted access but failed`;
     }
 
-    return `${log.result ? "Locked" : "Unlocked"} by ${source}`;
+    return `${log.result ? "Locked" : "Unlocked"} by ${userID}`;
   };
 
   const getLogSubtitle = (log: ActivityLogRecord) => {
@@ -188,29 +197,28 @@ export default function ActivityLog() {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
               >
-                {logs.map((log) => (
+                {logs.map((log) => { 
+                  const timestamp = getFormattedTimestamp(log.attempted_at);
+                  
+                  return(
                   <View key={log.attempt_id} style={styles.log}>
                     <View style={styles.doorAccessedIcon}>
-                      <AntDesign name="home" size={35} color="white" />
+                      <AntDesign name={getAttemptSource(log)} size={24} color="white" />
                     </View>
 
                     <View style={styles.doorDetails}>
                       <Text style={styles.doorAccessed}>
                         {getLogTitle(log)}
                       </Text>
-                      <Text style={styles.user}>{getLogSubtitle(log)}</Text>
+                      <Text style={styles.lock}>{getLogSubtitle(log)}</Text>
                     </View>
 
                     <View style={styles.timeStamp}>
-                      <Text style={styles.date}>
-                        {formatDate(log.attempted_at)}
-                      </Text>
-                      <Text style={styles.time}>
-                        {formatTime(log.attempted_at)}
-                      </Text>
+                      <Text style={styles.date}>{timestamp.date}</Text>
+                      <Text style={styles.time}>{timestamp.time}</Text>
                     </View>
                   </View>
-                ))}
+                )})}
               </ScrollView>
             )}
           </View>
@@ -275,9 +283,9 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   scrollContent: {
-    paddingTop: 8,
-    paddingBottom: 24,
-    alignItems: "center",
+    paddingTop: 4,
+    paddingBottom: 16,
+    paddingHorizontal: "7.5%",
   },
   stateContainer: {
     flex: 1,
@@ -292,22 +300,22 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   log: {
-    width: "85%",
-    minHeight: 92,
+    width: "100%",
+    minHeight: 72,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255,255,255,0.10)",
-    paddingVertical: 14,
+    paddingVertical: 10,
   },
   doorAccessedIcon: {
-    width: "auto",
+    width: 40,
+    alignItems: "center",
   },
   doorDetails: {
-    width: "65%",
-    height: "100%",
-    paddingLeft: "5%",
+    flex: 1,
+    paddingLeft: 10,
     flexDirection: "column",
     gap: 1,
     alignItems: "flex-start",
@@ -315,17 +323,16 @@ const styles = StyleSheet.create({
   },
   doorAccessed: {
     color: "white",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "400",
   },
-  user: {
+  lock: {
     color: "rgba(255,255,255,0.78)",
     fontSize: 12,
     fontWeight: "400",
   },
   timeStamp: {
-    flex: 1,
-    height: "100%",
+    minWidth: 55,
     flexDirection: "column",
     gap: 1,
     alignItems: "flex-end",
