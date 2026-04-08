@@ -198,6 +198,27 @@ export async function fetchLocks() {
   }
 }
 
+export async function fetchAdminLocks() {
+  const token = await getAccessToken();
+  if (!token) throw new Error("No access token");
+
+  try {
+    const res = await axios.get(`${BASE_URL}/access/Locks/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return res.data;
+  } catch (err) {
+    const status = err.response?.status;
+    const data = err.response?.data;
+
+    console.error("Failed to fetch admin locks:", status, data || err.message);
+    throw err;
+  }
+}
+
 export async function saveLockId(lockId) {
   // Treat null/undefined/"" as "clear"
   if (lockId === null || lockId === undefined || String(lockId).trim() === "") {
@@ -303,4 +324,12 @@ export async function generateKey(data) {
   return payload;
 }
 
-
+export async function logoutUser() {
+  try {
+    await removeTokens();
+    await removeLockId();
+    console.log("user logged out")
+  } catch (err) {
+    console.error("Logout failed:", err);
+  }
+}
