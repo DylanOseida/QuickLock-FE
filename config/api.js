@@ -9,6 +9,7 @@ const REGISTER_ENDPOINT = `${BASE_URL}/auth/register_user/`;
 const LOGIN_ENDPOINT = `${BASE_URL}/auth/login/`;
 const LOCK_STATUS_ENDPOINT = (id) => `${BASE_URL}/access/Locks/${id}/status/`;
 const LOCK_ACTION_ENDPOINT = (id) => `${BASE_URL}/access/Locks/${id}/mobile_unlock/`;
+const ADMIN_USERS_ENDPOINT = `${BASE_URL}/access/Users/read_by_admin/`;
 
 export async function saveTokens(tokens) {
   if (!tokens) return;
@@ -65,6 +66,12 @@ export async function getUserInfo() {
 }
 
 export async function registerUser(userData) {
+
+  const payload = {
+      ...userData,
+      admin: Boolean(userData?.admin),
+    };
+
   try {
     const response = await fetch(REGISTER_ENDPOINT, {
       method: "POST",
@@ -129,6 +136,32 @@ export async function fetchNFCStatus() {
     return { authorized: false, uid: "" };
   }
 }
+
+export async function fetchUsersByAdmin() {
+  const token = await getAccessToken();
+  if (!token) throw new Error("No access token");
+
+  try {
+    const res = await axios.get(ADMIN_USERS_ENDPOINT, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (Array.isArray(res.data)) {
+      return res.data;
+    }
+
+    return res.data ? [res.data] : [];
+  } catch (err) {
+    const status = err.response?.status;
+    const data = err.response?.data;
+
+    console.error("Failed to fetch users by admin:", status, data || err.message);
+    throw err;
+  }
+}
+
 
 //Login User
 export async function loginUser({ username, password }) {

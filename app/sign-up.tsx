@@ -1,12 +1,15 @@
 // screens/SignUpScreen.js
+import Feather from "@expo/vector-icons/Feather";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import ExpoCheckbox from "expo-checkbox";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -32,6 +35,8 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [lockIdEnabled, setLockIdEnabled] = useState(false);
+  const [lockId, setLockId] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -63,7 +68,7 @@ export default function SignUpScreen() {
         username,
         email,
         password,
-        admin: false,
+        admin: lockIdEnabled,
       };
 
       console.log("SIGNUP attempting registration...");
@@ -94,7 +99,7 @@ export default function SignUpScreen() {
       console.log("SIGNUP saved lockId:", await getStoredLockId());
 
       router.replace("/home");
-    } catch (err) {
+    } catch (err: any) {
       // If anything fails, make sure we don’t leave stale auth/lockId around
       await removeLockId();
       await removeTokens();
@@ -122,66 +127,100 @@ export default function SignUpScreen() {
         <Text style={styles.subtitle}>to get started now!</Text>
       </View>
 
-      <View style={styles.form}>
-        <View style={styles.inputContainer}>
-          <FontAwesome
-            style={[styles.icon, { padding: 2 }]}
-            name="user"
-            size={24}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Username"
-            placeholderTextColor={Colors.placeholder}
-            value={username}
-            keyboardType="default"
-            onChangeText={setUsername}
-            autoCapitalize="none"
-            editable={!loading}
-          />
-        </View>
+      <View style={styles.formCard}>
+        <ScrollView
+          style={styles.formScroll}
+          contentContainerStyle={styles.form}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.inputContainer}>
+            <FontAwesome
+              style={[styles.icon, { padding: 2 }]}
+              name="user"
+              size={24}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Username"
+              placeholderTextColor={Colors.placeholder}
+              value={username}
+              keyboardType="default"
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              editable={!loading}
+            />
+          </View>
 
-        <View style={styles.inputContainer}>
-          <MaterialIcons style={styles.icon} name="email" size={24} />
-          <TextInput
-            style={styles.input}
-            placeholder="Email Address"
-            placeholderTextColor={Colors.placeholder}
-            value={email}
-            keyboardType="email-address"
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            editable={!loading}
-          />
-        </View>
+          <View style={styles.inputContainer}>
+            <MaterialIcons style={styles.icon} name="email" size={24} />
+            <TextInput
+              style={styles.input}
+              placeholder="Email Address"
+              placeholderTextColor={Colors.placeholder}
+              value={email}
+              keyboardType="email-address"
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              editable={!loading}
+            />
+          </View>
 
-        <View style={styles.inputContainer}>
-          <MaterialCommunityIcons style={styles.icon} name="lock" size={24} />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={Colors.placeholder}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            editable={!loading}
-          />
-        </View>
+          <View style={styles.inputContainer}>
+            <MaterialCommunityIcons style={styles.icon} name="lock" size={24} />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor={Colors.placeholder}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              editable={!loading}
+            />
+          </View>
 
-        <View style={styles.inputContainer}>
-          <MaterialCommunityIcons style={styles.icon} name="lock" size={24} />
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm Password"
-            placeholderTextColor={Colors.placeholder}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            editable={!loading}
-          />
-        </View>
+          <View style={styles.inputContainer}>
+            <MaterialCommunityIcons style={styles.icon} name="lock" size={24} />
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm Password"
+              placeholderTextColor={Colors.placeholder}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              editable={!loading}
+            />
+          </View>
+
+          <View style={styles.checkboxContainer}>
+            <ExpoCheckbox
+              style={styles.checkbox}
+              value={lockIdEnabled}
+              onValueChange={setLockIdEnabled}
+              color={lockIdEnabled ? "rgba(255,255,255,0.14)" : undefined}
+              disabled={loading}
+            />
+            <Text style={styles.checkboxText}>lock id</Text>
+          </View>
+
+          {lockIdEnabled && (
+            <View style={styles.inputContainer}>
+              <Feather style={styles.icon} name="hash" size={24} />
+              <TextInput
+                style={styles.input}
+                placeholder="Lock ID"
+                placeholderTextColor={Colors.placeholder}
+                value={lockId}
+                keyboardType="number-pad"
+                onChangeText={setLockId}
+                autoCapitalize="none"
+                editable={!loading}
+              />
+            </View>
+          )}
+        </ScrollView>
       </View>
 
       <TouchableOpacity
@@ -213,11 +252,38 @@ const styles = StyleSheet.create({
   header: { ...Variables.header },
   title: { fontSize: 40, fontWeight: "bold", color: "white", marginBottom: 10 },
   subtitle: { fontSize: 18, color: "white", textAlign: "center" },
-  form: { alignItems: "center", justifyContent: "center", gap: 20 },
+  formCard: {
+    width: "100%",
+    maxHeight: 325,
+    alignItems: "center",
+    marginBottom: "5%",
+  },
+  formScroll: {
+    width: "100%",
+  },
+  form: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 20,
+    paddingBottom: 10,
+  },
   inputContainer: { ...Variables.inputStyle, backgroundColor: Colors.text_input },
   icon: { marginLeft: 5, marginRight: 5, color: Colors.white },
   input: { ...Variables.input },
-  signUpButton: { ...Variables.buttons, marginTop: "20%", backgroundColor: "#FFFFFF" },
+  checkboxContainer: {
+    width: "86%",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  checkbox: {
+    width: 16,
+    height: 16,
+    marginRight: 8,
+  },
+  checkboxText: {
+    color: "white",
+  },
+  signUpButton: { ...Variables.buttons, marginTop: "4%", backgroundColor: "#FFFFFF" },
   signUpText: { ...Variables.buttonsText, color: "black" },
   footer: { ...Variables.footer },
   lineContainer: { width: Variables.buttons.width, alignItems: "center" },
