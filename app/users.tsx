@@ -1,30 +1,66 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from 'expo-router';
-import React from "react";
-import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Accordion from "../components/quicklock/accordion";
 import BottomNav from "../components/quicklock/bottom-nav";
-import { getUserInfo } from '../config/api';
+import { fetchUsersByAdmin, getUserInfo } from '../config/api';
 
 
-const CARD_WIDTH = 0.86;
-const LOCK_ID = "1"; 
+type AccessUser = {
+  id?: number | string | null;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+};
+
+const TEMPORARY_LOCK_LABEL = "Front Door";
+const permanentUsers: AccessUser[] = [];
 
 export default function Users() {
   const router = useRouter();
+  const [temporaryUsers, setTemporaryUsers] = useState<AccessUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [usersError, setUsersError] = useState<string | null>(null);
 
-  const permanentUsers = [
-    { id: "1", name: "John Doe", lockLabel: "All Locks" },
-    { id: "2", name: "Jane Doe", lockLabel: "All Locks" },
-    { id: "3", name: "Mary Miller", lockLabel: "Front Door" },
-    { id: "4", name: "Jake Waters", lockLabel: "Garage Door" },
-  ];
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
 
-  const temporaryUsers = [
-    { id: "3", name: "Matt Smith", lockLabel: "Front Door" },
-  ];
+      const loadUsers = async () => {
+        try {
+          setLoadingUsers(true);
+          setUsersError(null);
+
+          const users = await fetchUsersByAdmin();
+
+          if (active) {
+            setTemporaryUsers(users);
+          }
+        } catch (error) {
+          console.error("Error fetching users:", error);
+
+          if (active) {
+            setTemporaryUsers([]);
+            setUsersError("We couldn't load users right now.");
+          }
+        } finally {
+          if (active) {
+            setLoadingUsers(false);
+          }
+        }
+      };
+
+      loadUsers();
+
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
     
   function UserRow({ name, rightLabel }: { name: string; rightLabel?: string }) {
@@ -51,6 +87,20 @@ export default function Users() {
     }
   };
 
+  const getUserDisplayName = (user: AccessUser) => {
+    const fullName = [user.first_name, user.last_name]
+      .map((value) => value?.trim())
+      .filter(Boolean)
+      .join(" ");
+
+    return (
+      fullName ||
+      user.username?.trim() ||
+      user.email?.trim() ||
+      (user.id !== null && user.id !== undefined ? `User #${user.id}` : "Unknown User")
+    );
+  };
+
   return (
     <LinearGradient colors={['#0E1927', '#1D3047']} style={StyleSheet.absoluteFillObject}>
       <StatusBar barStyle="light-content" />
@@ -65,33 +115,52 @@ export default function Users() {
         </View>
 
         <View style={styles.body}>
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollStyle} showsVerticalScrollIndicator={false}>
-            <Accordion title="Permanent Access">
-              {permanentUsers.map((u) => (
-                <UserRow key={u.id} name={u.name} rightLabel={u.lockLabel} />
-              ))}
-            </Accordion>
-
-            <Accordion title="Temporary Access">
-              {temporaryUsers.map((u) => (
-                <UserRow key={u.id} name={u.name} rightLabel={u.lockLabel} />
-              ))}
-            </Accordion>
-
-            <Accordion title="Cards">
-              <UserRow name="Card #1" rightLabel="John Doe" />
-            </Accordion>
-
-            <View style={styles.footer}>
-
-              {/* TEMPORARY navigation to share access screen */}
-              <Pressable style={styles.shareBtn} onPress={() => router.push("/share-access")}> 
-                <Feather name="share-2" size={16} color="#E9F4FF" />
-                <Text style={styles.shareBtnText}>Share Access</Text>
-              </Pressable>
+          {loadingUsers ? (
+            <View style={styles.stateContainer}>
+              <ActivityIndicator size="large" color="#E9F4FF" />
+              <Text style={styles.stateTitle}>Loading users...</Text>
             </View>
+          ) : usersError ? (
+            <View style={styles.stateContainer}>
+              <Text style={styles.stateTitle}>{usersError}</Text>
+            </View>
+          ) : (
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollStyle} showsVerticalScrollIndicator={false}>
+              <Accordion title="Permanent Access">
+                {permanentUsers.map((u, index) => (
+                  <UserRow
+                    key={String(u.id ?? u.username ?? u.email ?? index)}
+                    name={getUserDisplayName(u)}
+                    rightLabel={TEMPORARY_LOCK_LABEL}
+                  />
+                ))}
+              </Accordion>
 
-          </ScrollView>
+              <Accordion title="Temporary Access">
+                {temporaryUsers.map((u, index) => (
+                  <UserRow
+                    key={String(u.id ?? u.username ?? u.email ?? index)}
+                    name={getUserDisplayName(u)}
+                    rightLabel={TEMPORARY_LOCK_LABEL}
+                  />
+                ))}
+              </Accordion>
+
+              <Accordion title="Cards">
+                <UserRow name="Card #1" rightLabel="John Doe" />
+              </Accordion>
+
+              <View style={styles.footer}>
+
+                {/* TEMPORARY navigation to share access screen */}
+                <Pressable style={styles.shareBtn} onPress={() => router.push("/share-access")}> 
+                  <Feather name="share-2" size={16} color="#E9F4FF" />
+                  <Text style={styles.shareBtnText}>Share Access</Text>
+                </Pressable>
+              </View>
+
+            </ScrollView>
+          )}
         </View>
 
 
@@ -166,6 +235,19 @@ const styles = StyleSheet.create({
   
   cardContainer: {
     width: "100%",
+  },
+  stateContainer: {
+    flex: 1,
+    paddingHorizontal: "10%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stateTitle: {
+    marginTop: 20,
+    color: "#E9F4FF",
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
   },
 
 });
