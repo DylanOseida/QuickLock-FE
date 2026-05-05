@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import Colors from "../assets/styles/colors";
 import Variables from "../assets/styles/variables";
-import { checkBackendReachability, fetchLocks, getAccessToken, getStoredLockId, loginUser, removeLockId, removeTokens, saveLockId, saveTokens } from "../config/api";
+import { fetchLocks, getAccessToken, getStoredLockId, loginUser, removeLockId, removeTokens, saveLockId, saveTokens } from "../config/api";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -44,7 +44,6 @@ export default function LoginScreen() {
       console.log("LOGIN after removeLockId lockId:", await getStoredLockId());
       await removeTokens();
 
-      await checkBackendReachability();
       const authTokens = await loginUser({ username: email, password });
       await saveTokens(authTokens);
 
@@ -156,7 +155,7 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.authLinkRow}>
-          <Text style={styles.authPromptText}>Don&apos;t have an account?</Text>
+          <Text style={styles.authPromptText}>Don't have an account?</Text>
           <TouchableOpacity onPress={() => router.push("/sign-up")} disabled={loading}>
             <Text style={{ ...Variables.underlinedText }}>Sign Up</Text>
           </TouchableOpacity>

@@ -10,25 +10,6 @@ const LOGIN_ENDPOINT = `${BASE_URL}/auth/login/`;
 const LOCK_STATUS_ENDPOINT = (id) => `${BASE_URL}/access/Locks/${id}/status/`;
 const LOCK_ACTION_ENDPOINT = (id) =>
   `${BASE_URL}/access/Locks/${id}/mobile_unlock/`;
-const LOCKS_BY_ACCESS_ENDPOINT = `${BASE_URL}/access/Locks/list_by_user_access/`;
-
-function createNetworkError(action, url, err) {
-  const message = err?.message ? ` ${err.message}` : "";
-  const networkError = new Error(
-    `${action} network error. Could not reach ${url}.${message}`,
-  );
-  networkError.originalError = err;
-  networkError.isNetworkError = true;
-  return networkError;
-}
-
-export async function checkBackendReachability() {
-  try {
-    await fetch(BASE_URL, { method: "GET" });
-  } catch (err) {
-    throw createNetworkError("Backend reachability check", BASE_URL, err);
-  }
-}
 
 export async function saveTokens(tokens) {
   if (!tokens) return;
@@ -152,16 +133,11 @@ export async function fetchNFCStatus() {
 
 //Login User
 export async function loginUser({ username, password }) {
-  let res;
-  try {
-    res = await fetch(LOGIN_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-  } catch (err) {
-    throw createNetworkError("Login", LOGIN_ENDPOINT, err);
-  }
+  const res = await fetch(LOGIN_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
 
   const text = await res.text();
   let data;
@@ -205,11 +181,14 @@ export async function fetchLocks() {
   if (!token) throw new Error("No access token");
 
   try {
-    const res = await axios.get(LOCKS_BY_ACCESS_ENDPOINT, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    const res = await axios.get(
+      `${BASE_URL}/access/Locks/list_by_user_access/`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+    );
 
     return res.data;
   } catch (err) {
@@ -217,14 +196,7 @@ export async function fetchLocks() {
     const data = err.response?.data;
 
     console.error("Failed to fetch locks:", status, data || err.message);
-    if (!err.response) {
-      throw createNetworkError("Fetch locks", LOCKS_BY_ACCESS_ENDPOINT, err);
-    }
-
-    const apiError = new Error("Fetch locks failed");
-    apiError.status = status;
-    apiError.payload = data;
-    throw apiError;
+    throw err;
   }
 }
 
