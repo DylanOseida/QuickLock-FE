@@ -53,7 +53,7 @@ export async function removeTokens() {
 }
 
 export async function getUserInfo() {
-  const token = await getAccessToken(); // your existing helper
+  const token = await getAccessToken();
   if (!token) throw new Error("No access token available");
 
   const response = await axios.get(`${BASE_URL}/auth/user_info/`, {
@@ -166,7 +166,6 @@ export async function fetchLockStatus() {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    // If user no longer has access, clear stale lockId
     if (res.status === 401 || res.status === 403 || res.status === 404) {
       await removeLockId();
     }
@@ -193,7 +192,6 @@ export async function fetchLocks() {
 
     return res.data;
   } catch (err) {
-    // axios puts server response info here (if server responded)
     const status = err.response?.status;
     const data = err.response?.data;
 
@@ -202,8 +200,49 @@ export async function fetchLocks() {
   }
 }
 
+export async function fetchActivityLogs() {
+  const token = await getAccessToken();
+  if (!token) throw new Error("No access token");
+
+  try {
+    const res = await axios.get(`${BASE_URL}/access/Logs/read_by_user/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (err) {
+    const status = err.response?.status;
+    const data = err.response?.data;
+
+    console.error("Failed to fetch activity logs:", status, data || err.message);
+    throw err;
+  }
+}
+
+export async function fetchAdminLocks() {
+  const token = await getAccessToken();
+  if (!token) throw new Error("No access token");
+
+  try {
+    const res = await axios.get(`${BASE_URL}/access/Locks/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return res.data;
+  } catch (err) {
+    const status = err.response?.status;
+    const data = err.response?.data;
+
+    console.error("Failed to fetch admin locks:", status, data || err.message);
+    throw err;
+  }
+}
+
 export async function saveLockId(lockId) {
-  // Treat null/undefined/"" as "clear"
   if (lockId === null || lockId === undefined || String(lockId).trim() === "") {
     return removeLockId();
   }
@@ -267,11 +306,6 @@ export async function toggleLock() {
 
 const GENERATE_KEY_ENDPOINT = `${BASE_URL}/access/Keys/`;
 
-/**
- * Call backend to generate a key for a user (admin-only endpoint).
- * data should include fields required by KeyGenerationSerializer:
- * { username, not_valid_after, not_valid_before, key_name, lock_id }
- */
 export async function generateKey(data) {
   const token = await getAccessToken();
   if (!token) {
@@ -305,4 +339,14 @@ export async function generateKey(data) {
   }
 
   return payload;
+}
+
+export async function logoutUser() {
+  try {
+    await removeTokens();
+    await removeLockId();
+    console.log("user logged out")
+  } catch (err) {
+    console.error("Logout failed:", err);
+  }
 }

@@ -2,8 +2,9 @@ import { Feather } from "@expo/vector-icons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StatusBar,
@@ -14,15 +15,43 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../components/quicklock/bottom-nav";
+import { fetchAdminLocks } from "../config/api";
+
+type Lock = {
+  lock_id: number;
+  name: string;
+  location: string | null;
+  is_active: boolean | null;
+  created_at: string;
+  status: boolean;
+  administrator: number;
+};
 
 export default function Devices() {
   const router = useRouter();
 
-  const devices = [
-    { id: "261361", label: "Lock 1", name: "Front Door" },
-    { id: "323101", label: "Lock 2", name: "Back Door" },
-    { id: "895722", label: "Lock 3", name: "Garage Door" },
-  ];
+  const [devices, setDevices] = useState<Lock[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadLocks = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await fetchAdminLocks();
+      setDevices(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error loading locks:", err);
+      setError("Failed to load devices.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLocks();
+  }, []);
 
   return (
     <LinearGradient
@@ -51,42 +80,62 @@ export default function Devices() {
 
         {/* Body */}
         <View style={styles.body}>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 40 }}
-          >
-            {devices.map((device, index) => (
-              <View key={index} style={styles.deviceBlock}>
-                {/* Lock Header Row */}
-                <View style={styles.deviceHeader}>
-                  <View>
-                    <Text style={styles.lockTitle}>{device.label}</Text>
-                    <Text style={styles.lockId}>ID #{device.id}</Text>
+          {loading ? (
+            <View style={styles.centerState}>
+              <ActivityIndicator size="large" color="#E9F4FF" />
+              <Text style={styles.stateText}>Loading devices...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.centerState}>
+              <Text style={styles.stateText}>{error}</Text>
+              <Pressable style={styles.retryButton} onPress={loadLocks}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 40 }}
+            >
+              {devices.length === 0 ? (
+                <View style={styles.centerState}>
+                  <Text style={styles.stateText}>No devices found.</Text>
+                </View>
+              ) : (
+                devices.map((device, index) => (
+                  <View key={device.lock_id} style={styles.deviceBlock}>
+                    {/* Lock Header Row */}
+                    <View style={styles.deviceHeader}>
+                      <View>
+                        <Text style={styles.lockTitle}>{`Lock ${index + 1}`}</Text>
+                        <Text style={styles.lockId}>{`ID #${device.lock_id}`}</Text>
+                      </View>
+
+                      <Pressable>
+                        <Feather name="trash-2" size={22} color="#E9F4FF" />
+                      </Pressable>
+                    </View>
+
+                    {/* Name Field */}
+                    <View style={styles.inputContainer}>
+                      <TextInput
+                        value="Front Door"
+                        editable={false}
+                        placeholderTextColor="rgba(255,255,255,0.5)"
+                        style={styles.input}
+                      />
+                    </View>
                   </View>
+                ))
+              )}
 
-                  <Pressable>
-                    <Feather name="trash-2" size={22} color="#E9F4FF" />
-                  </Pressable>
-                </View>
-
-                {/* Name Field */}
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    value={device.name}
-                    editable={false}
-                    placeholderTextColor="rgba(255,255,255,0.5)"
-                    style={styles.input}
-                  />
-                </View>
-              </View>
-            ))}
-
-            {/* Add Device Button */}
-            <Pressable style={styles.addButton}>
-              <Feather name="plus-square" size={20} color="#E9F4FF" />
-              <Text style={styles.addButtonText}>Add Device</Text>
-            </Pressable>
-          </ScrollView>
+              {/* Add Device Button */}
+              <Pressable style={styles.addButton}>
+                <Feather name="plus-square" size={20} color="#E9F4FF" />
+                <Text style={styles.addButtonText}>Add Device</Text>
+              </Pressable>
+            </ScrollView>
+          )}
         </View>
 
         {/* Bottom Nav */}
@@ -153,18 +202,41 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   addButton: {
-    marginTop: 30,
-    height: 55,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.25)",
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.18)",
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
     gap: 10,
   },
   addButtonText: {
+    color: "#E9F4FF", 
+    fontSize: 16,
+    fontWeight: "700" 
+  },
+  centerState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  stateText: {
     color: "#E9F4FF",
     fontSize: 18,
+    marginTop: 14,
+    textAlign: "center",
+  },
+  retryButton: {
+    marginTop: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
+  retryButtonText: {
+    color: "#E9F4FF",
+    fontSize: 16,
     fontWeight: "600",
   },
 });

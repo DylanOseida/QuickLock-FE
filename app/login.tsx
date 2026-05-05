@@ -19,59 +19,59 @@ import { fetchLocks, getAccessToken, getStoredLockId, loginUser, removeLockId, r
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const validate = () => {
+  const validateCredentials = () => {
     if (!email) return "Please enter your email.";
     if (!password) return "Please enter your password.";
     return null;
   };
 
-  const [showPassword, setShowPassword] = useState(false);
-
-  const handleLogIn = async () => {
-
-    console.log("LOGINSCREEN handleLogIn CALLED");
-    const validationError = validate();
+  const handleLogin = async () => {
+    console.log("LOGINSCREEN handleLogin CALLED");
+    const validationError = validateCredentials();
     if (validationError) {
       alert(validationError);
       return;
     }
 
     setLoading(true);
-  try {
-    await removeLockId();
-    console.log("LOGIN after removeLockId lockId:", await getStoredLockId());
-    await removeTokens();
-
-    const resp = await loginUser({ username: email, password });
-    await saveTokens(resp);
-
-    console.log("ACCESS TOKEN AFTER LOGIN:", await getAccessToken());
-
-    const locks = await fetchLocks();
-    
-    if (!Array.isArray(locks) || locks.length === 0) {
+    try {
+      // Reset any previous session state before logging in a new user.
       await removeLockId();
-      console.log("LOGIN no-locks lockId:", await getStoredLockId());
-      router.replace("/home");
-      return;
-    }
+      console.log("LOGIN after removeLockId lockId:", await getStoredLockId());
+      await removeTokens();
 
-    await saveLockId(locks[0].lock_id);
-    router.replace("/home");
-  } catch (err) {
-    await removeLockId();
-    console.log("LOGIN after removeLockId lockId:", await getStoredLockId());
-    await removeTokens();
+      const authTokens = await loginUser({ username: email, password });
+      await saveTokens(authTokens);
+
+      console.log("ACCESS TOKEN AFTER LOGIN:", await getAccessToken());
+
+      const availableLocks = await fetchLocks();
+
+      if (!Array.isArray(availableLocks) || availableLocks.length === 0) {
+        await removeLockId();
+        console.log("LOGIN no-locks lockId:", await getStoredLockId());
+        router.replace("/home");
+        return;
+      }
+
+      // Preserve the current behavior of selecting the first accessible lock.
+      await saveLockId(availableLocks[0].lock_id);
+      router.replace("/home");
+    } catch (err) {
+      await removeLockId();
+      console.log("LOGIN after removeLockId lockId:", await getStoredLockId());
+      await removeTokens();
 
       console.error("Login failed:", err.status, err.payload || err.message);
-      const msg =
+      const errorMessage =
         (err.payload && (err.payload.detail || JSON.stringify(err.payload))) ||
         err.message ||
         "Login failed";
-      alert(msg);
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -90,7 +90,7 @@ export default function LoginScreen() {
       </View>
 
       <View style={styles.form}>
-        <View style={styles.inputStyle}>
+        <View style={styles.inputContainer}>
           <MaterialIcons style={styles.icon} name="email" size={24} />
           <TextInput
             style={styles.input}
@@ -104,7 +104,7 @@ export default function LoginScreen() {
           />
         </View>
 
-        <View style={styles.inputStyle}>
+        <View style={styles.inputContainer}>
           <MaterialCommunityIcons style={styles.icon} name="lock" size={24} />
 
           <TextInput
@@ -113,24 +113,25 @@ export default function LoginScreen() {
             placeholderTextColor={Colors.placeholder}
             value={password}
             onChangeText={setPassword}
-            secureTextEntry={!showPassword}
+            secureTextEntry={!isPasswordVisible}
             autoCapitalize="none"
             editable={!loading}
           />
 
           <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
+            style={styles.passwordToggleButton}
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             disabled={loading}
           >
             <MaterialCommunityIcons
-              name={showPassword ? "eye-off" : "eye"}
+              name={isPasswordVisible ? "eye-off" : "eye"}
               size={24}
               color={Colors.white}
             />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.forgotContainer}>
+        <View style={styles.forgotPasswordContainer}>
           <TouchableOpacity
             onPress={() => router.push("/forgot-pass")}
             disabled={loading}
@@ -138,46 +139,45 @@ export default function LoginScreen() {
             <Text style={styles.forgotText}>Forgot Password?</Text>
           </TouchableOpacity>
         </View>
+      </View>
 
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={handleLogIn}
-          disabled={loading}
-        >
-          {loading ? <ActivityIndicator /> : <Text style={styles.loginText}>Login</Text>}
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.loginButton}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        {loading ? <ActivityIndicator /> : <Text style={styles.loginText}>Login</Text>}
+      </TouchableOpacity>
 
-        <View style={styles.footer}>
-          <View style={styles.lineContainer}>
-            <View style={styles.line} />
-          </View>
+      <View style={styles.footer}>
+        <View style={styles.lineContainer}>
+          <View style={styles.line} />
+        </View>
 
-          <View style={styles.signUpContainer}>
-            <Text style={styles.questionText}>Don't have an account?</Text>
-            <TouchableOpacity onPress={() => router.push("/sign-up")} disabled={loading}>
-              <Text style={{ ...Variables.underlinedText }}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.authLinkRow}>
+          <Text style={styles.authPromptText}>Don't have an account?</Text>
+          <TouchableOpacity onPress={() => router.push("/sign-up")} disabled={loading}>
+            <Text style={{ ...Variables.underlinedText }}>Sign Up</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
   );
 }
 
-// Styles same as your original file (paste them or import)
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: "center" },
   header: { ...Variables.header },
   title: { fontSize: 40, fontWeight: "bold", color: "white", marginBottom: 10 },
   subtitle: { fontSize: 18, color: "white", textAlign: "center" },
-  form: { alignItems: "center", justifyContent: "center", gap: 20 },
-  inputStyle: { ...Variables.inputStyle, backgroundColor: Colors.text_input },
+  form: { gap: 20},
+  inputContainer: { ...Variables.inputStyle, backgroundColor: Colors.text_input },
   icon: { marginLeft: 5, marginRight: 5, color: Colors.white },
   input: { ...Variables.input },
-  forgotContainer: {
-    width: Variables.buttons.width,
+  passwordToggleButton: { paddingHorizontal: 2 },
+  forgotPasswordContainer: {
+    marginTop: -5,
     alignItems: "flex-end",
-    marginTop: 10,
   },
   forgotText: { ...Variables.underlinedText },
   loginButton: {
@@ -189,6 +189,6 @@ const styles = StyleSheet.create({
   footer: { ...Variables.footer },
   lineContainer: { width: Variables.buttons.width, alignItems: "center" },
   line: { height: 1, backgroundColor: "white", width: "100%" },
-  signUpContainer: { ...Variables.linkContainer },
-  questionText: { color: "white" },
+  authLinkRow: { ...Variables.linkContainer },
+  authPromptText: { color: "white" },
 });
