@@ -2,13 +2,14 @@ import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
-export const BASE_URL = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:8000`;
+export const BASE_URL = `https://quicklock-be.onrender.com`;
 
 //export const ESP32_URL = "http://192.168.X.X"
 const REGISTER_ENDPOINT = `${BASE_URL}/auth/register_user/`;
 const LOGIN_ENDPOINT = `${BASE_URL}/auth/login/`;
 const LOCK_STATUS_ENDPOINT = (id) => `${BASE_URL}/access/Locks/${id}/status/`;
-const LOCK_ACTION_ENDPOINT = (id) => `${BASE_URL}/access/Locks/${id}/mobile_unlock/`;
+const LOCK_ACTION_ENDPOINT = (id) =>
+  `${BASE_URL}/access/Locks/${id}/mobile_unlock/`;
 
 export async function saveTokens(tokens) {
   if (!tokens) return;
@@ -180,11 +181,14 @@ export async function fetchLocks() {
   if (!token) throw new Error("No access token");
 
   try {
-    const res = await axios.get(`${BASE_URL}/access/Locks/list_by_user_access/`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    const res = await axios.get(
+      `${BASE_URL}/access/Locks/list_by_user_access/`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+    );
 
     return res.data;
   } catch (err) {
