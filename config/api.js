@@ -11,6 +11,7 @@ const LOCK_STATUS_ENDPOINT = (id) => `${BASE_URL}/access/Locks/${id}/status/`;
 const LOCK_ACTION_ENDPOINT = (id) =>
   `${BASE_URL}/access/Locks/${id}/mobile_unlock/`;
 const ADMIN_USERS_ENDPOINT = `${BASE_URL}/access/Users/read_by_admin/`;
+const USER_DETAIL_ENDPOINT = (id) => `${BASE_URL}/access/Users/${id}/`;
 
 export async function saveTokens(tokens) {
   if (!tokens) return;
@@ -248,6 +249,30 @@ export async function fetchUsersByAdmin() {
     const data = err.response?.data;
 
     console.error("Failed to fetch users by admin:", status, data || err.message);
+    throw err;
+  }
+}
+
+export async function fetchUserById(id) {
+  const token = await getAccessToken();
+  if (!token) throw new Error("No access token");
+  if (id === null || id === undefined || String(id).trim() === "") {
+    throw new Error("No user id provided");
+  }
+
+  try {
+    const res = await axios.get(USER_DETAIL_ENDPOINT(id), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return res.data;
+  } catch (err) {
+    const status = err.response?.status;
+    const data = err.response?.data;
+
+    console.error("Failed to fetch user by id:", status, data || err.message);
     throw err;
   }
 }
