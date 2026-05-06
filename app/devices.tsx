@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../components/quicklock/bottom-nav";
-import { fetchAdminLocks } from "../config/api";
+import { fetchAdminLocks, getUserInfo } from "../config/api";
 
 type Lock = {
   lock_id: number;
@@ -39,11 +39,22 @@ export default function Devices() {
       setLoading(true);
       setError("");
 
+      const currentUser = await getUserInfo();
+      const isAdmin =
+        currentUser?.admin === true || currentUser?.is_admin === true;
+
+      if (!isAdmin) {
+        setDevices([]);
+        setError("Administrator access is required to view devices.");
+        return;
+      }
+
       const data = await fetchAdminLocks();
       setDevices(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error loading locks:", err);
-      setError("Failed to load devices.");
+      setDevices([]);
+      setError("Unable to verify device access.");
     } finally {
       setLoading(false);
     }
