@@ -1,6 +1,6 @@
 // screens/LoginScreen.js
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -17,14 +17,14 @@ import Variables from "../assets/styles/variables";
 import { fetchLocks, getAccessToken, getStoredLockId, loginUser, removeLockId, removeTokens, saveLockId, saveTokens } from "../config/api";
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const validateCredentials = () => {
-    if (!email) return "Please enter your email.";
+    if (!username) return "Please enter your username.";
     if (!password) return "Please enter your password.";
     return null;
   };
@@ -44,7 +44,7 @@ export default function LoginScreen() {
       console.log("LOGIN after removeLockId lockId:", await getStoredLockId());
       await removeTokens();
 
-      const authTokens = await loginUser({ username: email, password });
+      const authTokens = await loginUser({ username, password });
       await saveTokens(authTokens);
 
       console.log("ACCESS TOKEN AFTER LOGIN:", await getAccessToken());
@@ -91,14 +91,14 @@ export default function LoginScreen() {
 
       <View style={styles.form}>
         <View style={styles.inputContainer}>
-          <MaterialIcons style={styles.icon} name="email" size={24} />
+          <FontAwesome style={[styles.icon, { padding: 2 }]} name="user" size={24} />
           <TextInput
             style={styles.input}
-            placeholder="Email Address"
+            placeholder="Username"
             placeholderTextColor={Colors.placeholder}
-            value={email}
-            keyboardType="email-address"
-            onChangeText={setEmail}
+            value={username}
+            keyboardType="default"
+            onChangeText={setUsername}
             autoCapitalize="none"
             editable={!loading}
           />
