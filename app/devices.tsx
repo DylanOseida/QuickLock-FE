@@ -40,8 +40,9 @@ export default function Devices() {
       setError("");
 
       const currentUser = await getUserInfo();
+      console.log("Current user info:", currentUser);
       const isAdmin =
-        currentUser?.admin === true || currentUser?.is_admin === true;
+        currentUser?.is_staff === true || currentUser?.is_staff === true;
 
       if (!isAdmin) {
         setDevices([]);
@@ -73,19 +74,17 @@ export default function Devices() {
       <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable
-            style={styles.backContainer}
-            onPress={() => {
-              if (router.canGoBack()) router.back();
-            }}
-          >
-            <MaterialIcons name="arrow-back-ios-new" size={24} color="white" />
-          </Pressable>
-          <View style={{ width: 24 }} />
-        </View>
+          <View style={styles.backContainer}>
+            <Pressable
+              style={styles.avatar}
+              onPress={() => {
+                if (router.canGoBack()) router.back();
+              }}
+            >
+              <MaterialIcons name="arrow-back-ios-new" size={24} color="white" />
+            </Pressable>
+          </View>
 
-        {/* Title */}
-        <View style={styles.titleContainer}>
           <Text style={styles.title}>Devices</Text>
         </View>
 
@@ -158,24 +157,29 @@ export default function Devices() {
 
 const styles = StyleSheet.create({
   header: {
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: "column",
     marginTop: "3%",
     paddingHorizontal: "6%",
     alignItems: "center",
   },
   backContainer: {
-    width: "auto",
+    width: "100%",
   },
-  titleContainer: {
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.35)",
     alignItems: "center",
-    marginBottom: "6%",
+    justifyContent: "center",
   },
   title: {
     color: "#FFFFFF",
     fontSize: 55,
     fontWeight: "800",
+    textAlign: "center",
+    marginTop: "3%", 
   },
   body: {
     flex: 1,

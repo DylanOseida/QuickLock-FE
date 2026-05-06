@@ -207,12 +207,12 @@ export async function fetchLocks() {
   }
 }
 
-export async function fetchActivityLogs() {
+export async function fetchAdminActivityLogs() {
   const token = await getAccessToken();
   if (!token) throw new Error("No access token");
 
   try {
-    const res = await axios.get(`${BASE_URL}/access/Logs/read_by_user/`, {
+    const res = await axios.get(`${BASE_URL}/access/Logs/read_by_admin/`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -249,6 +249,27 @@ export async function fetchUsersByAdmin() {
     const data = err.response?.data;
 
     console.error("Failed to fetch users by admin:", status, data || err.message);
+    throw err;
+  }
+}
+
+export async function fetchUserActivityLogs() {
+  const token = await getAccessToken();
+  if (!token) throw new Error("No access token");
+
+  try {
+    const res = await axios.get(`${BASE_URL}/access/Logs/read_by_user/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (err) {
+    const status = err.response?.status;
+    const data = err.response?.data;
+
+    console.error("Failed to fetch user activity logs:", status, data || err.message);
     throw err;
   }
 }

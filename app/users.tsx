@@ -22,6 +22,7 @@ const permanentUsers: AccessUser[] = [];
 
 export default function Users() {
   const router = useRouter();
+  const [permanentUsers, setPermanentUsers] = useState<AccessUser[]>([]);
   const [temporaryUsers, setTemporaryUsers] = useState<AccessUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [usersError, setUsersError] = useState<string | null>(null);
@@ -32,27 +33,42 @@ export default function Users() {
 
       const loadUsers = async () => {
         try {
-          setLoadingUsers(true);
-          setUsersError(null);
-
-          // 1. Check current user
           const currentUser = await getUserInfo();
 
-          const isAdmin = currentUser?.admin === true;
+          const isAdmin = currentUser?.is_staff === true;
 
-          // 2. If NOT admin → stop here
           if (!isAdmin) {
+            setPermanentUsers([]);
             setTemporaryUsers([]);
             setUsersError("Administrator access is required to view users.");
             return;
           }
 
-          // 3. If admin → fetch users
           const users = await fetchUsersByAdmin();
 
-          setTemporaryUsers(users);
+          const userList = Array.isArray(users) ? users : [];
+
+          const adminUsers = userList.filter((user) => {
+            return (
+              user.id === currentUser.id ||
+              user.username === currentUser.username ||
+              user.email === currentUser.email
+            );
+          });
+
+          const tempUsers = userList.filter((user) => {
+            return !(
+              user.id === currentUser.id ||
+              user.username === currentUser.username ||
+              user.email === currentUser.email
+            );
+          });
+
+          setPermanentUsers(adminUsers);
+          setTemporaryUsers(tempUsers);
         } catch (error) {
           console.error("Error fetching users:", error);
+          setPermanentUsers([]);
           setTemporaryUsers([]);
           setUsersError("We couldn't load users right now.");
         } finally {

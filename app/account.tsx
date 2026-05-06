@@ -184,6 +184,7 @@ const styles = StyleSheet.create({
     fontSize: 55,
     fontWeight: 800,
     textAlign: "center",
+    marginTop: "3%",
   },
 
   /*BODY*/

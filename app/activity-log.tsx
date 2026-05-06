@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../components/quicklock/bottom-nav";
-import { fetchActivityLogs, getUserInfo } from "../config/api";
+import { fetchAdminActivityLogs, fetchUserActivityLogs, getUserInfo } from "../config/api";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -49,8 +49,17 @@ export default function ActivityLog() {
         setLoading(true);
         setError(null);
 
-        const data = await fetchActivityLogs();
+        const currentUser = await getUserInfo();
 
+        const isAdmin =
+          currentUser?.is_staff === true ||
+          currentUser?.admin === true ||
+          currentUser?.is_admin === true;
+
+        const data = isAdmin
+          ? await fetchAdminActivityLogs()
+          : await fetchUserActivityLogs();
+          
         const sortedLogs = [...data].sort((a, b) => {
           const aTime = new Date(a.attempted_at).getTime();
           const bTime = new Date(b.attempted_at).getTime();
