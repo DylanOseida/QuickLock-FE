@@ -35,22 +35,28 @@ export default function Users() {
           setLoadingUsers(true);
           setUsersError(null);
 
+          // 1. Check current user
+          const currentUser = await getUserInfo();
+
+          const isAdmin = currentUser?.admin === true;
+
+          // 2. If NOT admin → stop here
+          if (!isAdmin) {
+            setTemporaryUsers([]);
+            setUsersError("Administrator access is required to view users.");
+            return;
+          }
+
+          // 3. If admin → fetch users
           const users = await fetchUsersByAdmin();
 
-          if (active) {
-            setTemporaryUsers(users);
-          }
+          setTemporaryUsers(users);
         } catch (error) {
           console.error("Error fetching users:", error);
-
-          if (active) {
-            setTemporaryUsers([]);
-            setUsersError("We couldn't load users right now.");
-          }
+          setTemporaryUsers([]);
+          setUsersError("We couldn't load users right now.");
         } finally {
-          if (active) {
-            setLoadingUsers(false);
-          }
+          setLoadingUsers(false);
         }
       };
 
