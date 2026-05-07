@@ -22,6 +22,7 @@ const permanentUsers: AccessUser[] = [];
 
 export default function Users() {
   const router = useRouter();
+  const [permanentUsers, setPermanentUsers] = useState<AccessUser[]>([]);
   const [temporaryUsers, setTemporaryUsers] = useState<AccessUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [usersError, setUsersError] = useState<string | null>(null);
@@ -32,25 +33,46 @@ export default function Users() {
 
       const loadUsers = async () => {
         try {
-          setLoadingUsers(true);
-          setUsersError(null);
+          const currentUser = await getUserInfo();
+
+          const isAdmin = currentUser?.is_staff === true;
+
+          if (!isAdmin) {
+            setPermanentUsers([]);
+            setTemporaryUsers([]);
+            setUsersError("Administrator access is required to view users.");
+            return;
+          }
 
           const users = await fetchUsersByAdmin();
 
-          if (active) {
-            setTemporaryUsers(users);
-          }
+          const userList = Array.isArray(users) ? users : [];
+
+          const adminUsers = userList.filter((user) => {
+            return (
+              user.id === currentUser.id ||
+              user.username === currentUser.username ||
+              user.email === currentUser.email
+            );
+          });
+
+          const tempUsers = userList.filter((user) => {
+            return !(
+              user.id === currentUser.id ||
+              user.username === currentUser.username ||
+              user.email === currentUser.email
+            );
+          });
+
+          setPermanentUsers(adminUsers);
+          setTemporaryUsers(tempUsers);
         } catch (error) {
           console.error("Error fetching users:", error);
-
-          if (active) {
-            setTemporaryUsers([]);
-            setUsersError("We couldn't load users right now.");
-          }
+          setPermanentUsers([]);
+          setTemporaryUsers([]);
+          setUsersError("We couldn't load users right now.");
         } finally {
-          if (active) {
-            setLoadingUsers(false);
-          }
+          setLoadingUsers(false);
         }
       };
 
@@ -147,7 +169,7 @@ export default function Users() {
               </Accordion>
 
               <Accordion title="Cards">
-                <UserRow name="Card #1" rightLabel="John Doe" />
+                <UserRow name="Card #1" rightLabel="" />
               </Accordion>
 
               <View style={styles.footer}>

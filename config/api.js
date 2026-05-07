@@ -4,6 +4,9 @@ import { Platform } from "react-native";
 
 export const BASE_URL = `https://quicklock-be.onrender.com`;
 
+//for local testing
+// export const BASE_URL = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:8000`; 
+
 //export const ESP32_URL = "http://192.168.X.X"
 const REGISTER_ENDPOINT = `${BASE_URL}/auth/register_user/`;
 const LOGIN_ENDPOINT = `${BASE_URL}/auth/login/`;
@@ -207,12 +210,37 @@ export async function fetchLocks() {
   }
 }
 
-export async function fetchActivityLogs() {
+export async function fetchLatestSuccessfulLog() {
   const token = await getAccessToken();
   if (!token) throw new Error("No access token");
 
   try {
-    const res = await axios.get(`${BASE_URL}/access/Logs/read_by_user/`, {
+    const res = await axios.get(`${BASE_URL}/access/Logs/latest_successful/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return res.data;
+  } catch (err) {
+    if (err.response?.status === 404) return null;
+
+    console.error(
+      "Failed to fetch latest successful log:",
+      err.response?.status,
+      err.response?.data || err.message
+    );
+
+    throw err;
+  }
+}
+
+export async function fetchAdminActivityLogs() {
+  const token = await getAccessToken();
+  if (!token) throw new Error("No access token");
+
+  try {
+    const res = await axios.get(`${BASE_URL}/access/Logs/read_by_admin/`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -249,6 +277,27 @@ export async function fetchUsersByAdmin() {
     const data = err.response?.data;
 
     console.error("Failed to fetch users by admin:", status, data || err.message);
+    throw err;
+  }
+}
+
+export async function fetchUserActivityLogs() {
+  const token = await getAccessToken();
+  if (!token) throw new Error("No access token");
+
+  try {
+    const res = await axios.get(`${BASE_URL}/access/Logs/read_by_user/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (err) {
+    const status = err.response?.status;
+    const data = err.response?.data;
+
+    console.error("Failed to fetch user activity logs:", status, data || err.message);
     throw err;
   }
 }
