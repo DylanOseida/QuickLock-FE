@@ -29,7 +29,9 @@ type ActivityLogRecord = {
   permission: string;
   result: boolean;
   user: number | null;
+  username?: string | null;
   lock: number;
+  location: string;
   key: number | null;
 };
 
@@ -126,11 +128,17 @@ export default function ActivityLog() {
   };
 
   const getAttemptSource = (log: ActivityLogRecord) => {
-    return log.presented_credential ? "credit-card" : "mobile";
-  };
+    const credential = log.presented_credential?.trim().toLowerCase();
 
-  const getUserID = (log: ActivityLogRecord) => {
-    return log.user !== null ? `User #${log.user}` : "Unknown user";
+    if (credential === "card") {
+      return "credit-card";
+    }
+
+    return "mobile";
+  };
+  
+  const getUsername = (log: ActivityLogRecord) => {
+    return log.username?.trim() || "Unknown user";
   };
 
   const isFailedAttempt = (log: ActivityLogRecord) => {
@@ -149,24 +157,29 @@ export default function ActivityLog() {
 
   const getLogTitle = (log: ActivityLogRecord) => {
     
-    const userID = getUserID(log);
+    const username = getUsername(log);
 
     if (isFailedAttempt(log)) {
-      return `${userID} attempted access but failed`;
+      return `${username} attempted access but failed`;
     }
 
-    return `${log.result ? "Locked" : "Unlocked"} by ${userID}`;
+    return `${log.result ? "Locked" : "Unlocked"} by ${username}`;
   };
 
-  const getLogSubtitle = (log: ActivityLogRecord) => {
-    const parts = [`Lock #${log.lock}`];
+const getLogSubtitle = (log: ActivityLogRecord) => {
+  const location =
+    log.location?.toLowerCase() === "main"
+      ? "Front Door"
+      : log.location || "Unknown location";
 
-    if (isFailedAttempt(log) && log.reason?.trim()) {
-      parts.push(log.reason.trim());
-    }
+  const parts = [location];
 
-    return parts.join(" | ");
-  };
+  if (isFailedAttempt(log) && log.reason?.trim()) {
+    parts.push(log.reason.trim());
+  }
+
+  return parts.join(" | ");
+};
 
   return (
     <LinearGradient
@@ -325,6 +338,7 @@ const styles = StyleSheet.create({
   doorDetails: {
     flex: 1,
     paddingLeft: 10,
+    paddingRight: 1,
     flexDirection: "column",
     gap: 1,
     alignItems: "flex-start",

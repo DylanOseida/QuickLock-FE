@@ -4,6 +4,9 @@ import { Platform } from "react-native";
 
 export const BASE_URL = `https://quicklock-be.onrender.com`;
 
+//for local testing
+// export const BASE_URL = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:8000`; 
+
 //export const ESP32_URL = "http://192.168.X.X"
 const REGISTER_ENDPOINT = `${BASE_URL}/auth/register_user/`;
 const LOGIN_ENDPOINT = `${BASE_URL}/auth/login/`;
@@ -203,6 +206,31 @@ export async function fetchLocks() {
     const data = err.response?.data;
 
     console.error("Failed to fetch locks:", status, data || err.message);
+    throw err;
+  }
+}
+
+export async function fetchLatestSuccessfulLog() {
+  const token = await getAccessToken();
+  if (!token) throw new Error("No access token");
+
+  try {
+    const res = await axios.get(`${BASE_URL}/access/Logs/latest_successful/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return res.data;
+  } catch (err) {
+    if (err.response?.status === 404) return null;
+
+    console.error(
+      "Failed to fetch latest successful log:",
+      err.response?.status,
+      err.response?.data || err.message
+    );
+
     throw err;
   }
 }

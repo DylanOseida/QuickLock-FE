@@ -1,17 +1,30 @@
 import { Feather } from "@expo/vector-icons";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Animated, Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "../components/quicklock/bottom-nav";
-import { fetchLocks, fetchLockStatus, getStoredLockId, getUserInfo, toggleLock } from '../config/api';
+import { fetchLatestSuccessfulLog, fetchLocks, fetchLockStatus, getStoredLockId, getUserInfo, toggleLock } from '../config/api';
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 
 const CARD_WIDTH = 0.86;
 const STATUS_RETRY_DELAY_MS = 500;
 const STATUS_RETRY_LIMIT = 8;
+
+type LatestLog = {
+  attempted_at: string;
+  result: boolean;
+  username?: string | null;
+};
+
+const PACIFIC_TIME_ZONE = "America/Los_Angeles";
 
 export default function Home() {
   const [locked, setLocked] = useState(false);
@@ -21,6 +34,7 @@ export default function Home() {
   const holdAnim = useRef(new Animated.Value(0)).current;
   const holdTimer = useRef<number | null>(null);
   const router = useRouter();
+  const [latestLog, setLatestLog] = useState<LatestLog | null>(null);
   // const [lockId, setLockId] = useState<string | null>(null);   might need this later
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [locks, setLocks] = useState<any[] | null>(null);
@@ -37,6 +51,18 @@ export default function Home() {
     setLocks(id ? [id] : []);
     return null;
   };
+
+  const refreshLatestLog = async () => {
+  try {
+    const log = await fetchLatestSuccessfulLog();
+    setLatestLog(log);
+    return log;
+  } catch (err) {
+    console.error("Failed to refresh latest log:", err);
+    setLatestLog(null);
+    return null;
+  }
+};
 
   useEffect(() => {
     let mounted = true;
@@ -86,6 +112,8 @@ export default function Home() {
 
         // 🔹 Fetch initial lock status
         const status = await refreshLockStatus();
+        await refreshLatestLog();
+
         if (!mounted) return;
 
         if (typeof status !== "boolean") {
@@ -120,8 +148,17 @@ export default function Home() {
 
   const lockIcon = useMemo(() => (locked ? "lock" : "unlock"), [locked]);
   const ctaText = locked ? "Hold to Unlock" : "Hold to Lock";
-  const statusText = locked ? "Locked by John Doe" : "Unlocked by John Doe";
-  const timeText = "Today at 10:28 AM";
+  const statusText = latestLog
+    ? `${latestLog.result ? "Locked" : "Unlocked"} by ${
+        latestLog.username?.trim() || "Unknown user"
+      }`
+    : locked
+      ? "Locked"
+      : "Unlocked";
+
+  const timeText = latestLog?.attempted_at
+    ? dayjs.utc(latestLog.attempted_at).tz(PACIFIC_TIME_ZONE).format("M/D/YYYY [at] h:mm A")
+    : "";
 
   const wait = (ms: number) =>
   new Promise((resolve) => {
@@ -175,6 +212,7 @@ export default function Home() {
           console.error("Error updating lock status:", error);
         } finally {
           setIsUpdatingStatus(false);
+          await refreshLatestLog();
         }
       })();
 
