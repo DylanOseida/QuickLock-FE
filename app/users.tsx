@@ -169,7 +169,7 @@ export default function Users() {
               </Accordion>
 
               <Accordion title="Cards">
-                <UserRow name="Card #1" rightLabel="John Doe" />
+                <UserRow name="Card #1" rightLabel="" />
               </Accordion>
 
               <View style={styles.footer}>
