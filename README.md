@@ -1,55 +1,62 @@
-# Welcome to your Expo app 👋
+# QuickLock FE
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+QuickLock FE is an Expo + React Native frontend for a smart lock system. It provides authentication, lock access, lock status polling, lock/unlock actions, activity views, and admin-oriented device and user management screens.
 
-## Get started
+## Tech stack
 
-1. Install dependencies
+- Expo SDK 54
+- React Native 0.81
+- React 19
+- Expo Router for file-based navigation
+- Axios and `fetch` for API requests
+- `expo-secure-store` for token storage on native devices
 
-   ```bash
-   npx expo install react-native-safe-area-context
-   npm install @react-navigation/native @react-navigation/stack
-   npx expo install react-native-gesture-handler react-native-reanimated react-native-screens
+## Main app flow
 
-   npm install
-   npx expo install expo-checkbox
-   ```
+- `app/index.tsx`: welcome screen with login and sign-up entry points
+- `app/login.tsx` and `app/sign-up.tsx`: authenticate the user and persist tokens
+- `app/home.tsx`: shows the main lock card, polls lock status, and triggers lock/unlock
+- `app/account.tsx`, `app/activity-log.tsx`, `app/users.tsx`, `app/share-access.tsx`, `app/settings.tsx`, `app/devices.tsx`: supporting account, audit, and admin flows
 
-2. Start the app
+Navigation is defined in `app/_layout.tsx` using Expo Router stack screens.
 
-   ```bash
-   npx expo start
-   ```
+## API configuration
 
-In the output, you'll find options to open the app in a
+The app is currently pointed at the deployed backend:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```ts
+https://quicklock-be.onrender.com
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+This is defined in [config/api.js](/C:/Users/ads80408/Development/QuickLock-FE/config/api.js).
 
-## Learn more
+There is also a commented local-development option that uses `EXPO_PUBLIC_IP_ADDRESS` from `.env`.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Local setup
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+1. Install dependencies:
 
-## Join the community
+```bash
+npm install
+```
 
-Join our community of developers creating universal apps.
+2. If you want to use a local backend, create a `.env` file based on `.env.example` and update `config/api.js` to use the local `BASE_URL`.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+3. Start the app:
+
+```bash
+npm run start
+```
+
+You can also run:
+
+- `npm run android`
+- `npm run ios`
+- `npm run web`
+- `npm run lint`
+
+## Notes
+
+- Access and refresh tokens are stored in `localStorage` on web and `expo-secure-store` on native.
+- The selected lock ID is also persisted locally and reused by the home screen.
+- Some admin/device flows appear to be in progress, so not every screen is fully wired yet.
